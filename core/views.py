@@ -36,6 +36,11 @@ def serialize_model(model_obj):
             data[field.name] = float(val)
         elif isinstance(val, (datetime, date)):
             data[field.name] = val.isoformat()
+        elif hasattr(val, 'url'):
+            try:
+                data[field.name] = val.url
+            except ValueError:
+                data[field.name] = None
         elif hasattr(val, 'pk'):
             data[field.name] = val.pk
         else:
