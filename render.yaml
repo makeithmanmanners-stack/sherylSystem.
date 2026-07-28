@@ -1,25 +1,13 @@
 services:
   - type: web
-    name: sheryl-system
+    name: sheryl-system-app
     runtime: python
     region: singapore
     buildCommand: "chmod +x build.sh && ./build.sh"
     startCommand: "gunicorn store_erp.wsgi:application"
     plan: free
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: sheryl-system-db
-          property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.9
-
-databases:
-  - name: sheryl-system-db
-    plan: free
-    region: singapore
-    databaseName: sarisari_erp
-    user: sheryl_user
-    ipAllowList: []
