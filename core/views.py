@@ -258,9 +258,6 @@ def api_state(request):
                 if customer:
                     if method == "Credit":
                         customer.credit_balance += total
-                    # Add loyalty points: 1 point for every 100 PHP spent
-                    points_earned = int(total // 100)
-                    customer.reward_points += points_earned
                     customer.save()
                 
                 # Create sale items and deduct inventory stock
@@ -309,8 +306,6 @@ def api_state(request):
                     sale.save()
                     
                     if sale.customer:
-                        points_earned = int(sale.total / 100)
-                        sale.customer.reward_points += points_earned
                         if sale.method == "Credit":
                             sale.customer.credit_balance += sale.total
                         sale.customer.save()

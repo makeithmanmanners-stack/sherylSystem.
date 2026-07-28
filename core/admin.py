@@ -49,7 +49,11 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
 admin.site.register(Category)
 admin.site.register(Brand)
 admin.site.register(Supplier)
-admin.site.register(Customer)
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact', 'credit_limit', 'credit_balance', 'reward_points')
+    search_fields = ('name', 'contact', 'email')
+
 admin.site.register(Employee)
 admin.site.register(Expense)
 admin.site.register(AuditLog)

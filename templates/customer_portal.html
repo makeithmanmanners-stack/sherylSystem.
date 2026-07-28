@@ -292,28 +292,6 @@
                 </button>
             </div>
 
-            <!-- Loyalty Points Card -->
-            <div class="glass-card p-5 border border-accentGreen/20 bg-gradient-to-br from-gray-900/40 via-transparent to-accentGreen/5 flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] font-bold text-accentGreen uppercase tracking-wider"><i class="fa-solid fa-star mr-1"></i> Loyalty Points</span>
-                    <span class="text-xs font-black text-white" x-text="customerPoints + ' pts'"></span>
-                </div>
-                <div class="flex items-baseline gap-1 mt-1">
-                    <span class="text-3xl font-black text-white" x-text="customerPoints"></span>
-                    <span class="text-[10px] text-gray-550 font-bold">Reward Points</span>
-                </div>
-                
-                <div class="mt-2">
-                    <div class="flex justify-between text-[9px] text-gray-500 font-bold mb-1">
-                        <span>Tier Progress</span>
-                        <span x-text="customerPoints + ' / 1,000 pts'"></span>
-                    </div>
-                    <div class="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-glassBorder/60">
-                        <div :style="'width: ' + Math.min(100, (customerPoints / 1000) * 100) + '%'" class="h-full bg-gradient-to-r from-accentGreen to-emerald-400 rounded-full transition-all duration-500"></div>
-                    </div>
-                    <span class="text-[8px] text-gray-550 block mt-1.5 leading-relaxed">Collect 1,000 points to redeem a <b>₱500.00 discount voucher</b> on your next delivery!</span>
-                </div>
-            </div>
 
             <!-- Credit Balance Card -->
             <div class="glass-card p-5 border border-accentOrange/20 bg-gradient-to-br from-gray-900/40 via-transparent to-accentOrange/5 flex flex-col gap-3">

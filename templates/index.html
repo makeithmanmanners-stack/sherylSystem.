@@ -329,7 +329,7 @@
                                     <input type="number" x-model.number="paymentCash" class="w-full bg-gray-950 border border-glassBorder rounded p-1.5 focus:outline-none focus:border-accentBlue text-white font-bold">
                                 </div>
                                 <div>
-                                    <span class="text-gray-500 block mb-0.5">GCash / Maya</span>
+                                    <span class="text-gray-500 block mb-0.5">GCash</span>
                                     <input type="number" x-model.number="paymentEWallet" class="w-full bg-gray-950 border border-glassBorder rounded p-1.5 focus:outline-none focus:border-accentBlue text-white font-bold">
                                 </div>
                             </div>
@@ -1382,8 +1382,6 @@
                         <select x-model="creditPayMethod" class="w-full glass-input rounded px-2 py-1.5">
                             <option value="Cash">Cash</option>
                             <option value="GCash">GCash</option>
-                            <option value="Maya">Maya</option>
-                            <option value="Bank">Bank Deposit</option>
                         </select>
                     </div>
                     <div>
@@ -1850,7 +1848,7 @@
                 // Method of payment
                 let method = "Cash";
                 if (this.paymentEWallet > 0 && this.paymentCash > 0) method = "Split (Cash/E-Wallet)";
-                else if (this.paymentEWallet > 0) method = "GCash/Maya";
+                else if (this.paymentEWallet > 0) method = "GCash";
                 
                 let payload = {
                     action: "create_sale",
