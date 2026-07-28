@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheryl Premium Wholesale & Retail ERP</title>
+    
+    <!-- Theme Bootstrap Script (Runs immediately to prevent flash) -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('color-theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTML5 QR Code / Barcode Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#0b0f19',
+                        darkCard: 'rgba(17, 24, 39, 0.7)',
+                        accentBlue: '#2563eb',
+                        accentCyan: '#06b6d4',
+                        accentGreen: '#10b981',
+                        accentOrange: '#f97316',
+                        glassBorder: 'rgba(255, 255, 255, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        // Theme Helper Functions
+        function updateTheme(theme) {
+            localStorage.setItem('color-theme', theme);
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: theme }));
+        }
+
+        // Listen for system changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const currentTheme = localStorage.getItem('color-theme') || 'system';
+            if (currentTheme === 'system') {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        });
+
+        // Sync tabs/windows
+        window.addEventListener('storage', e => {
+            if (e.key === 'color-theme') {
+                const newTheme = e.newValue || 'system';
+                updateTheme(newTheme);
+                window.dispatchEvent(new CustomEvent('theme-updated-externally', { detail: newTheme }));
+            }
+        });
+    </script>
+    
+    <style>
+        /* Light Mode Styles (Default) */
+        body {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0f172a;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* Glassmorphism custom styling */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 1rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            color: #0f172a;
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Scanner laser animation */
+        @keyframes scanner-laser {
+            0%, 100% {
+                top: 5%;
+            }
+            50% {
+                top: 95%;
+            }
+        }
+        .animate-laser {
+            animation: scanner-laser 2.0s ease-in-out infinite;
+        }
+
+        /* Dark Mode overrides */
+        html.dark body {
+            background-color: #0b0f19;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
+            color: #f3f4f6;
+        }
+        
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        html.dark .glass-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        html.dark ::-webkit-scrollbar-track {
+            background: rgba(17, 24, 39, 0.5);
+        }
+        html.dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        html.dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+    
+    <!-- Navbar / Header -->
+    <header class="glass-card m-4 mb-2 p-4 flex flex-col md:flex-row md:items-center justify-between shadow-lg relative z-40" 
+            x-data="{ 
+                mobileMenuOpen: false, 
+                currentTheme: localStorage.getItem('color-theme') || 'system',
+                setTheme(theme) {
+                    this.currentTheme = theme;
+                    updateTheme(theme);
+                }
+            }"
+            @theme-updated-externally.window="currentTheme = $event.detail">
+        <div class="flex items-center justify-between w-full md:w-auto">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-accentBlue to-accentCyan p-2.5 rounded-xl shadow-md shadow-accentBlue/20">
+                    <i class="fa-solid fa-store text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                        SHERYL DISTRIBUTORS
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-gray-400 font-medium tracking-wide">Enterprise ERP & Sari-Sari POS</p>
+                </div>
+            </div>
+            <!-- Mobile Menu Toggle Button -->
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white focus:outline-none md:hidden p-2 rounded-lg bg-slate-200/50 dark:bg-gray-800/40 border border-slate-200 dark:border-glassBorder">
+                <i class="fa-solid" :class="mobileMenuOpen ? 'fa-xmark text-lg' : 'fa-bars text-lg'"></i>
+            </button>
+        </div>
+        
+        <!-- Desktop Navigation (Hidden on Mobile) -->
+        <nav class="hidden md:flex items-center gap-6">
+            {% if not user.customer_profile %}
+            <a href="{% url 'store_front' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-globe text-gray-400"></i> Storefront
+            </a>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+                {% if user.customer_profile %}
+                    <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-user-tag text-gray-400"></i> My Portal
+                    </a>
+                {% elif user.employee %}
+                    {% if user.employee.role == 'Admin' %}
+                        <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-gray-400"></i> Admin Portal
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-gauge-high text-gray-400"></i> Admin Portal
+                    </a>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Theme Selector Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="text-slate-500 dark:text-gray-400 hover:text-accentCyan dark:hover:text-accentCyan focus:outline-none p-2 rounded-xl bg-slate-200/50 hover:bg-slate-200 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 border border-slate-200/60 dark:border-glassBorder flex items-center justify-center transition-all shadow-sm" title="Change Theme">
+                    <template x-if="currentTheme === 'dark'">
+                        <i class="fa-solid fa-moon text-sm"></i>
+                    </template>
+                    <template x-if="currentTheme === 'light'">
+                        <i class="fa-solid fa-sun text-sm text-amber-500"></i>
+                    </template>
+                    <template x-if="currentTheme === 'system'">
+                        <i class="fa-solid fa-desktop text-sm"></i>
+                    </template>
+                </button>
+                <div x-show="open" @click.away="open = false" 
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-32 glass-card p-1 shadow-xl z-50 flex flex-col gap-0.5 text-xs" 
+                     style="display: none;">
+                    <button @click="setTheme('light'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'light' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-sun w-4 text-center text-amber-500"></i> Light
+                    </button>
+                    <button @click="setTheme('dark'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'dark' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-moon w-4 text-center"></i> Dark
+                    </button>
+                    <button @click="setTheme('system'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'system' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-desktop w-4 text-center"></i> System
+                    </button>
+                </div>
+            </div>
+            
+            <div class="h-5 w-[1px] bg-slate-200 dark:bg-glassBorder"></div>
+            {% if user.is_authenticated %}
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    {% if user.customer_profile %}
+                        <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">{{ user.customer_profile.name }}</p>
+                        <p class="text-[10px] text-accentCyan font-bold tracking-wider">STORE PARTNER</p>
+                    {% elif user.employee %}
+                        <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">{{ user.employee.name }}</p>
+                        <p class="text-[10px] text-accentCyan font-bold tracking-wider uppercase">{{ user.employee.role }}</p>
+                    {% else %}
+                        <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">Sheryl Vasquez</p>
+                        <p class="text-[10px] text-accentCyan font-bold tracking-wider">ADMINISTRATOR</p>
+                    {% endif %}
+                </div>
+                <div class="w-9 h-9 rounded-full bg-accentBlue/20 border border-accentBlue/30 flex items-center justify-center overflow-hidden">
+                    <i class="fa-solid fa-user text-sm text-accentBlue"></i>
+                </div>
+                <a href="{% url 'logout' %}" class="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors ml-2 flex items-center gap-1.5 bg-slate-200/50 hover:bg-red-500/10 dark:bg-gray-900/40 dark:hover:bg-red-500/10 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-glassBorder hover:border-red-500/20">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </div>
+            {% else %}
+            <a href="{% url 'login' %}" class="bg-accentBlue hover:bg-accentBlue/80 text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-accentBlue/20">
+                <i class="fa-solid fa-right-to-bracket"></i> Admin Login
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- Mobile Navigation (Visible only on Mobile when toggled) -->
+        <nav x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-4"
+             class="md:hidden flex flex-col gap-4 mt-4 pt-4 border-t border-slate-200 dark:border-glassBorder w-full"
+             style="display: none;">
+            {% if not user.customer_profile %}
+            <a href="{% url 'store_front' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                <i class="fa-solid fa-globe text-gray-400 w-5"></i> Storefront
+            </a>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+                {% if user.customer_profile %}
+                    <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                        <i class="fa-solid fa-user-tag text-gray-400 w-5"></i> My Portal
+                    </a>
+                {% elif user.employee %}
+                    {% if user.employee.role == 'Admin' %}
+                        <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                            <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i> Admin Portal
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                        <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i> Admin Portal
+                    </a>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Mobile Theme Selection -->
+            <div class="flex items-center justify-between py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                <span class="text-xs font-bold text-slate-500 dark:text-gray-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-half-stroke"></i> Theme
+                </span>
+                <div class="flex bg-slate-200/60 dark:bg-gray-800/60 p-0.5 rounded-lg border border-slate-200/40 dark:border-glassBorder/40">
+                    <button @click="setTheme('light')" class="px-3 py-1 rounded-md text-xs transition-all flex items-center justify-center" :class="currentTheme === 'light' ? 'bg-white text-amber-500 shadow-sm font-bold' : 'text-slate-500 dark:text-gray-400'">
+                        <i class="fa-solid fa-sun"></i>
+                    </button>
+                    <button @click="setTheme('dark')" class="px-3 py-1 rounded-md text-xs transition-all flex items-center justify-center" :class="currentTheme === 'dark' ? 'bg-gray-700 text-white shadow-sm font-bold' : 'text-slate-500 dark:text-gray-400'">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                    <button @click="setTheme('system')" class="px-3 py-1 rounded-md text-xs transition-all flex items-center justify-center" :class="currentTheme === 'system' ? 'bg-white dark:bg-gray-700 text-slate-800 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-gray-400'">
+                        <i class="fa-solid fa-desktop"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {% if user.is_authenticated %}
+            <div class="flex flex-col gap-3 py-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-accentBlue/20 border border-accentBlue/30 flex items-center justify-center overflow-hidden">
+                        <i class="fa-solid fa-user text-sm text-accentBlue"></i>
+                    </div>
+                    <div>
+                        {% if user.customer_profile %}
+                            <p class="text-sm font-semibold text-slate-700 dark:text-gray-200">{{ user.customer_profile.name }}</p>
+                            <p class="text-[10px] text-accentCyan font-bold tracking-wider">STORE PARTNER</p>
+                        {% elif user.employee %}
+                            <p class="text-sm font-semibold text-slate-700 dark:text-gray-200">{{ user.employee.name }}</p>
+                            <p class="text-[10px] text-accentCyan font-bold tracking-wider uppercase">{{ user.employee.role }}</p>
+                        {% else %}
+                            <p class="text-sm font-semibold text-slate-700 dark:text-gray-200">Sheryl Vasquez</p>
+                            <p class="text-[10px] text-accentCyan font-bold tracking-wider">ADMINISTRATOR</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center justify-center gap-1.5 bg-slate-200/50 hover:bg-red-500/10 dark:bg-gray-900/40 dark:hover:bg-red-500/10 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-glassBorder hover:border-red-500/20 w-full mt-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </div>
+            {% else %}
+            <a href="{% url 'login' %}" class="bg-accentBlue hover:bg-accentBlue/80 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-accentBlue/20 w-full">
+                <i class="fa-solid fa-right-to-bracket"></i> Admin Login
+            </a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col px-4 pb-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-card m-4 mt-2 p-3 text-center text-xs text-gray-500 flex items-center justify-between">
+        <p>&copy; 2026 Sheryl Sari-Sari Store Management System. All rights reserved.</p>
+        <p class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accentGreen animate-pulse"></span>
+            Django Engine Connected (MySQL Active)
+        </p>
+    </footer>
+
+</body>
+</html>

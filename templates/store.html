@@ -1,0 +1,986 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<style>
+    .store-hero {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+    }
+
+    /* Watermark Styles */
+    .receipt-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-15deg);
+        width: 250px;
+        height: 250px;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.05;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .receipt-watermark svg * {
+        stroke: currentColor;
+    }
+    .receipt-watermark svg text {
+        fill: currentColor;
+        stroke: none;
+    }
+    #receipt-print-area > div:not(.receipt-watermark) {
+        position: relative;
+        z-index: 10;
+    }
+    .receipt-watermark ~ div, 
+    .receipt-watermark ~ hr,
+    .receipt-watermark ~ template {
+        position: relative;
+        z-index: 10;
+    }
+
+    @media print {
+        /* General page reset for printing */
+        html, body {
+            height: auto !important;
+            overflow: visible !important;
+            background-color: white !important;
+            background-image: none !important;
+            color: black !important;
+        }
+
+        /* Hide global header and footer */
+        header, footer {
+            display: none !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Reset layout constraints of storeApp container for print */
+        div[x-data="storeApp()"] {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Hide all page content blocks except the receipt modal */
+        div[x-data="storeApp()"] > *:not(div[x-show="showReceipt"]) {
+            display: none !important;
+        }
+
+        /* Reset the fixed positioning of the modal backdrop for clean print flow on mobile */
+        div[x-show="showReceipt"] {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            display: block !important;
+            visibility: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: auto !important;
+        }
+
+        /* Format the receipt print card */
+        #receipt-print-area {
+            position: relative !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 10px !important;
+            border: none !important;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+
+        /* Force high-contrast text and border styles for print readability */
+        #receipt-print-area,
+        #receipt-print-area * {
+            color: black !important;
+            visibility: visible !important;
+        }
+
+        #receipt-print-area .bg-gray-900\/60 {
+            background-color: transparent !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        #receipt-print-area hr,
+        #receipt-print-area .border-glassBorder,
+        #receipt-print-area .border-t {
+            border-color: #d1d5db !important;
+            visibility: visible !important;
+        }
+
+        /* QR and Barcode images visibility force */
+        #receipt-print-area img {
+            visibility: visible !important;
+            filter: grayscale(1) !important;
+        }
+
+        /* Hide elements that shouldn't be printed (buttons, close icons, etc.) */
+        .no-print {
+            display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Watermark print styling: force a visible but transparent gray instead of default black */
+        #receipt-print-area .receipt-watermark {
+            opacity: 1 !important;
+            z-index: 0 !important;
+        }
+        #receipt-print-area .receipt-watermark svg * {
+            stroke: rgba(0, 0, 0, 0.10) !important;
+        }
+        #receipt-print-area .receipt-watermark svg text {
+            fill: rgba(0, 0, 0, 0.10) !important;
+            stroke: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="storeApp()" x-init="initStore()" class="flex-grow flex flex-col lg:flex-row gap-4 h-full" x-cloak>
+    
+    <!-- Left Column: Catalog & Search -->
+    <div class="flex-grow flex flex-col gap-4 lg:w-2/3">
+        <!-- Hero & Search -->
+        <div class="glass-card p-6 store-hero flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-20">
+            <div>
+                <h2 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-accentCyan to-white bg-clip-text text-transparent">
+                    Wholesale & Retail Storefront
+                </h2>
+                <p class="text-sm text-gray-400 mt-1">Get discounted wholesale pricing when purchasing full cases/boxes.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 max-w-sm w-full font-sans">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
+                    </span>
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @focus="showDropdown = true"
+                           @input="showDropdown = true"
+                           @keydown.enter="handleStorefrontSearchEnter()" 
+                           placeholder="Scan Barcode or Search Product..." 
+                           class="w-full glass-input rounded-xl pl-9 pr-4 py-2.5 text-sm">
+                    
+                    <!-- Search Results Dropdown -->
+                    <div x-show="showDropdown && searchQuery.trim().length > 0" 
+                         class="absolute left-0 right-0 mt-2 bg-[#111827] border border-glassBorder rounded-xl shadow-2xl z-50 overflow-y-auto max-h-80 divide-y divide-glassBorder"
+                         @click.away="showDropdown = false"
+                         x-transition>
+                        <template x-for="prod in filteredProducts()" :key="prod.sku">
+                            <div class="p-3 hover:bg-gray-800/80 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                                 @click="selectProductFromDropdown(prod)">
+                                <!-- Thumbnail -->
+                                <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-950/40 border border-glassBorder shrink-0 flex items-center justify-center">
+                                    <template x-if="prod.image_url">
+                                        <img :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!prod.image_url">
+                                        <i class="fa-solid fa-box text-gray-655 text-xs"></i>
+                                    </template>
+                                </div>
+                                <div class="min-w-0 flex-grow">
+                                    <div class="flex items-center gap-1.5 mb-1">
+                                        <span class="text-[9px] font-bold text-accentCyan bg-accentCyan/15 px-1.5 py-0.5 rounded uppercase" x-text="prod.category_name"></span>
+                                        <span class="text-[9px] font-semibold text-gray-500 font-mono" x-text="prod.sku"></span>
+                                    </div>
+                                    <h4 class="font-bold text-white text-xs truncate" :title="prod.name" x-text="prod.name"></h4>
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-[10px] text-gray-400">
+                                        <span>Retail: <b class="text-white" x-text="'₱' + formatCurrency(prod.retail_price)"></b></span>
+                                        <span class="text-gray-700">|</span>
+                                        <span>Whole: <b class="text-accentCyan" x-text="'₱' + formatCurrency(prod.wholesale_price)"></b></span>
+                                        <span class="text-gray-700">|</span>
+                                        <span :class="prod.stock_quantity <= prod.min_stock ? 'text-red-400 font-bold' : 'text-accentGreen font-bold'" x-text="prod.stock_quantity + ' left'"></span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-1 shrink-0" @click.stop>
+                                    <button @click="addToCart(prod, 'retail'); showDropdown = false; searchQuery = '';" :disabled="prod.stock_quantity <= 0" class="px-2.5 py-1 bg-gray-850 hover:bg-gray-700 disabled:opacity-50 text-[10px] font-bold rounded-lg text-gray-200 transition-colors">
+                                        + Retail
+                                    </button>
+                                    <button @click="addToCart(prod, 'wholesale'); showDropdown = false; searchQuery = '';" :disabled="prod.stock_quantity <= 0" class="px-2.5 py-1 bg-accentBlue hover:bg-accentBlue/80 disabled:opacity-50 text-[10px] font-bold rounded-lg text-white transition-colors">
+                                        + Case
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="filteredProducts().length === 0">
+                            <div class="p-4 text-center text-xs text-gray-500 font-sans">
+                                No products found matching "<span x-text="searchQuery"></span>"
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <button @click="triggerBarcodeScan()" class="bg-gray-800 hover:bg-gray-700 text-white p-2.5 rounded-xl border border-glassBorder flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-barcode text-sm"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filters (Category/Brand) -->
+        <div class="glass-card p-4 flex flex-wrap items-center gap-3 relative z-10">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-500 mr-2">Filters:</span>
+            
+            <button @click="selectedCategory = ''" :class="selectedCategory === '' ? 'bg-accentBlue text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                All Categories
+            </button>
+            <template x-for="cat in categories" :key="cat.id">
+                <button @click="selectedCategory = cat.id" :class="selectedCategory === cat.id ? 'bg-accentCyan text-gray-950 font-bold' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all" x-text="cat.name">
+                </button>
+            </template>
+            
+            <div class="h-4 w-[1px] bg-glassBorder mx-1"></div>
+            
+            <select x-model="selectedBrand" class="bg-gray-800 border border-glassBorder rounded-lg text-xs px-2.5 py-1.5 text-gray-300 font-semibold focus:outline-none">
+                <option value="">All Brands</option>
+                <template x-for="b in brands" :key="b.id">
+                    <option :value="b.id" x-text="b.name"></option>
+                </template>
+            </select>
+        </div>
+        
+        <!-- Catalog Grid -->
+        <div class="flex-grow grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto max-h-[calc(100vh-270px)] pr-2 content-start">
+            <template x-for="prod in filteredProducts()" :key="prod.sku">
+                <div class="glass-card p-4 flex flex-col justify-between min-h-[420px] hover:border-accentBlue/40 transition-all duration-300 relative group overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-accentBlue/5 rounded-bl-full group-hover:to-accentBlue/10 transition-all"></div>
+                    
+                    <div>
+                        <!-- Category Tag & Stock Status -->
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-accentCyan bg-accentCyan/10 px-2 py-0.5 rounded" x-text="prod.category_name"></span>
+                            
+                            <template x-if="prod.stock_quantity <= 0">
+                                <span class="text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded">Out of Stock</span>
+                            </template>
+                            <template x-if="prod.stock_quantity > 0 && prod.stock_quantity <= prod.min_stock">
+                                <span class="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded">Low Stock</span>
+                            </template>
+                            <template x-if="prod.stock_quantity > prod.min_stock">
+                                <span class="text-[10px] font-bold text-accentGreen bg-accentGreen/10 px-2 py-0.5 rounded" x-text="prod.stock_quantity + ' cases left'"></span>
+                            </template>
+                        </div>
+                        
+                        <!-- Product Image -->
+                        <div class="w-full h-36 bg-gray-950/40 rounded-xl overflow-hidden mb-3 border border-glassBorder/40 flex items-center justify-center relative">
+                            <template x-if="prod.image_url">
+                                <img :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-350">
+                            </template>
+                            <template x-if="!prod.image_url">
+                                <div class="text-gray-650 flex flex-col items-center gap-1">
+                                    <i class="fa-solid fa-box text-3xl"></i>
+                                    <span class="text-[9px] uppercase tracking-widest font-semibold text-gray-500">No Image</span>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <!-- Title & Brand -->
+                        <h3 class="font-bold text-base text-white group-hover:text-accentBlue transition-colors" x-text="prod.name"></h3>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="prod.brand_name"></p>
+                        
+                        <!-- Price Badges -->
+                        <div class="mt-4 grid grid-cols-2 gap-2 bg-gray-900/50 p-2.5 rounded-xl border border-glassBorder">
+                            <div>
+                                <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Retail Price (Single)</span>
+                                <span class="text-base font-extrabold text-white" x-text="'₱' + formatCurrency(prod.retail_price)"></span>
+                            </div>
+                            <div class="border-l border-glassBorder pl-2">
+                                <span class="text-[9px] font-bold text-accentCyan uppercase tracking-wider block">Wholesale (Case)</span>
+                                <span class="text-base font-extrabold text-accentCyan" x-text="'₱' + formatCurrency(prod.wholesale_price)"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-t border-glassBorder flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs text-gray-400">Qty:</span>
+                            <input type="number" x-model.number="prod.buyQty" min="1" class="w-14 bg-gray-900 border border-glassBorder text-center text-sm font-semibold rounded py-1 focus:outline-none focus:border-accentBlue">
+                        </div>
+                        
+                        <div class="flex-grow flex items-center gap-1">
+                            <button @click="addToCart(prod, 'retail')" :disabled="prod.stock_quantity <= 0" class="flex-grow py-1.5 px-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold text-gray-200 transition-all">
+                                + Retail
+                            </button>
+                            <button @click="addToCart(prod, 'wholesale')" :disabled="prod.stock_quantity <= 0" class="flex-grow py-1.5 px-2 bg-accentBlue hover:bg-accentBlue/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-bold text-white transition-all">
+                                + Whole
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Right Column: Cart, Checkout & Loyalty Lookup -->
+    <div class="lg:w-1/3 flex flex-col gap-4">
+        <!-- Loyalty Check Card -->
+        <div class="glass-card p-4">
+            <h3 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-address-card text-accentCyan"></i> Loyalty Rewards & Credit Inquiry
+            </h3>
+            <div class="flex items-center gap-2">
+                <input type="text" x-model="loyaltyContact" placeholder="Enter customer name or contact..." class="flex-grow glass-input rounded-lg px-3 py-1.5 text-xs">
+                <button @click="lookupLoyalty()" class="bg-gray-800 hover:bg-gray-700 text-accentCyan px-3 py-1.5 rounded-lg text-xs font-bold border border-accentCyan/20">
+                    Find
+                </button>
+            </div>
+            
+            <!-- Lookup results -->
+            <template x-if="searchedCustomer">
+                <div class="mt-3 p-3 bg-gray-900/60 rounded-xl border border-glassBorder flex flex-col gap-1.5 text-xs animate-fadeIn">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Customer:</span>
+                        <span class="text-white font-bold" x-text="searchedCustomer.name"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Loyalty Reward Points:</span>
+                        <span class="text-accentGreen font-bold" x-text="searchedCustomer.reward_points + ' pts'"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Credit Limit:</span>
+                        <span class="text-white font-bold" x-text="'₱' + formatCurrency(searchedCustomer.credit_limit)"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400 font-medium">Credit Balance:</span>
+                        <span class="text-red-400 font-bold" x-text="'₱' + formatCurrency(searchedCustomer.credit_balance)"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+        
+        <!-- Cart & Checkout Card -->
+        <div class="glass-card p-5 flex flex-col justify-between flex-grow min-h-[350px]">
+            <div>
+                <div class="flex items-center justify-between pb-3 border-b border-glassBorder mb-3">
+                    <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                        <i class="fa-solid fa-cart-shopping text-accentBlue"></i> Shopping Cart
+                    </h3>
+                    <span class="text-xs bg-accentBlue/20 text-accentBlue px-2 py-0.5 rounded-full font-bold" x-text="cart.length + ' types'"></span>
+                </div>
+                
+                <!-- Cart Items List -->
+                <div class="overflow-y-auto max-h-[280px] flex flex-col gap-2.5 pr-1">
+                    <template x-if="cart.length === 0">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fa-solid fa-basket-shopping text-3xl mb-2 block"></i>
+                            <p class="text-xs">Your cart is empty.</p>
+                        </div>
+                    </template>
+                    
+                    <template x-for="(item, index) in cart" :key="index">
+                        <div class="bg-gray-900/40 p-2.5 rounded-xl border border-glassBorder flex items-center justify-between gap-3 text-xs">
+                            <!-- Thumbnail -->
+                            <div class="w-9 h-9 rounded-lg overflow-hidden bg-gray-950/40 border border-glassBorder shrink-0 flex items-center justify-center">
+                                <template x-if="item.image_url">
+                                    <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!item.image_url">
+                                    <i class="fa-solid fa-box text-gray-650 text-xs"></i>
+                                </template>
+                            </div>
+                            
+                            <div class="flex-grow min-w-0">
+                                <h4 class="font-bold text-white truncate" x-text="item.name"></h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase" :class="item.priceType === 'wholesale' ? 'bg-accentCyan/15 text-accentCyan' : 'bg-gray-800 text-gray-400'" x-text="item.priceType"></span>
+                                    <span class="text-gray-500 font-semibold" x-text="item.qty + 'x ₱' + formatCurrency(item.price)"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-right flex items-center gap-3 shrink-0">
+                                <span class="font-extrabold text-white text-xs" x-text="'₱' + formatCurrency(item.total)"></span>
+                                <button @click="removeFromCart(index)" class="text-gray-500 hover:text-red-400 transition-colors">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <div class="mt-5 pt-3 border-t border-glassBorder">
+                <!-- Totals -->
+                <div class="flex flex-col gap-1.5 text-sm mb-4">
+                    <div class="flex justify-between text-gray-400">
+                        <span>Subtotal</span>
+                        <span x-text="'₱' + formatCurrency(cartSubtotal())"></span>
+                    </div>
+
+                    <div class="flex justify-between font-extrabold text-white text-base pt-1 border-t border-glassBorder/40">
+                        <span>Grand Total</span>
+                        <span class="text-accentBlue" x-text="'₱' + formatCurrency(cartTotal())"></span>
+                    </div>
+                </div>
+                
+                <!-- Checkout Info Form -->
+                <div class="flex flex-col gap-2 mb-4 text-xs">
+                    <div>
+                        <label class="block text-gray-400 font-semibold mb-1">Customer / Store Name</label>
+                        <template x-if="isCustomerLoggedIn">
+                            <div class="w-full bg-gray-900/50 border border-glassBorder rounded-lg px-3 py-2 text-xs font-bold text-accentCyan">
+                                <i class="fa-solid fa-store mr-1.5"></i> <span x-text="loggedInCustomerName"></span>
+                            </div>
+                        </template>
+                        <template x-if="!isCustomerLoggedIn">
+                            <select x-model="checkoutCustomerId" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                                <option value="">Walk-in Customer</option>
+                                <template x-for="c in customers" :key="c.id">
+                                    <option :value="c.id" x-text="c.name"></option>
+                                </template>
+                            </select>
+                        </template>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Payment Method</label>
+                            <select x-model="checkoutPaymentMethod" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                                <option value="Cash">Cash at Counter</option>
+                                <option value="GCash">GCash</option>
+                                <option value="Maya">Maya</option>
+                                <option value="Credit">Credit (U-tang)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 font-semibold mb-1">Sales Route / Dispatch</label>
+                            <select x-model="checkoutRoute" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
+                                <option value="">Direct Store POS</option>
+                                <option value="Route 1 - Cagsalaosao City Center">Route 1 - Cagsalaosao</option>
+                                <option value="Route 2 - Calbayog Diversion Road">Route 2 - Calbayog Diversion</option>
+                                <option value="Route 3 - Rawis / Oquendo District">Route 3 - Rawis</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <button @click="submitOrder()" :disabled="cart.length === 0 || isSubmitting" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold rounded-xl py-3 shadow-lg shadow-accentBlue/20 hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none transition-all flex items-center justify-center gap-2">
+                    <span x-show="!isSubmitting"><i class="fa-solid fa-circle-check"></i> Place Draft Order / QR Pay</span>
+                    <span x-show="isSubmitting"><i class="fa-solid fa-spinner animate-spin"></i> Submitting Order...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Checkout Confirmation Modal -->
+    <div x-show="showReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto">
+            <button @click="showReceipt = false" class="absolute top-4 right-4 text-gray-550 hover:text-white no-print">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            
+            <div class="text-center pb-4 border-b border-glassBorder">
+                <div class="w-12 h-12 bg-accentCyan/10 border border-accentCyan/20 rounded-full flex items-center justify-center mx-auto mb-3 no-print">
+                    <i class="fa-solid fa-qrcode text-xl text-accentCyan"></i>
+                </div>
+                <h3 class="text-sm font-black text-accentCyan uppercase tracking-widest">SHEYDE SARI-SARI STORE</h3>
+                <p class="text-[10px] text-slate-800 dark:text-gray-200 mt-0.5 font-bold">Calbayog City, Samar | Sheryl: 09973803250 | Deo: 09169104900</p>
+                <p class="text-xs text-slate-500 dark:text-gray-400 mt-2 no-print">Please show this barcode/QR code to the cashier to pay.</p>
+            </div>
+            
+            <!-- Invoice Details -->
+            <div class="my-5 flex flex-col gap-3 text-xs bg-gray-900/60 p-4 rounded-xl border border-glassBorder font-mono relative">
+                <!-- Transparent Sheyde Watermark Logo -->
+                <div class="receipt-watermark">
+                    <svg viewBox="0 0 240 240" fill="none" stroke-width="2.5" class="w-full h-full">
+                        <!-- Outer Luxury Rings -->
+                        <circle cx="120" cy="120" r="106" stroke-width="1.5" />
+                        <circle cx="120" cy="120" r="99" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round" />
+                        <circle cx="120" cy="120" r="91" stroke-width="1" />
+                        
+                        <!-- Small Elegant Top Star -->
+                        <path d="M120 44 L122.5 50 L128.5 50 L123.7 53.6 L125.5 59.6 L120 56 L114.5 59.6 L116.3 53.6 L111.5 50 L117.5 50 Z" fill="currentColor" stroke="none" />
+                        
+                        <!-- Left and Right Leaf Branches (Laurel Wreath style) -->
+                        <path d="M72 120 C72 142 85 160 102 165" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M72 120 Q66 114 62 122 Q68 128 72 120" fill="currentColor" stroke="none" />
+                        <path d="M73 132 Q65 129 64 138 Q71 140 73 132" fill="currentColor" stroke="none" />
+                        <path d="M77 144 Q69 143 70 152 Q76 151 77 144" fill="currentColor" stroke="none" />
+                        <path d="M85 155 Q78 156 81 164 Q87 160 85 155" fill="currentColor" stroke="none" />
+                        <path d="M168 120 C168 142 155 160 138 165" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M168 120 Q174 114 178 122 Q172 128 168 120" fill="currentColor" stroke="none" />
+                        <path d="M167 132 Q175 129 176 138 Q169 140 167 132" fill="currentColor" stroke="none" />
+                        <path d="M163 144 Q171 143 170 152 Q164 151 163 144" fill="currentColor" stroke="none" />
+                        <path d="M155 155 Q162 156 159 164 Q153 160 155 155" fill="currentColor" stroke="none" />
+
+                        <!-- Premium Custom Monogram "S" (centered) -->
+                        <path d="M96 98 C96 82, 144 82, 144 98 C144 114, 96 116, 96 132 C96 148, 144 148, 144 132" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                        
+                        <!-- Text Elements -->
+                        <text x="120" y="184" font-family="'Plus Jakarta Sans', 'Outfit', 'Inter', sans-serif" font-size="16" font-weight="950" letter-spacing="6" text-anchor="middle">SHEYDE</text>
+                        <text x="120" y="198" font-family="'Plus Jakarta Sans', 'Outfit', 'Inter', sans-serif" font-size="8" font-weight="700" letter-spacing="4" text-anchor="middle">EST. 2026</text>
+                        <text x="120" y="210" font-family="sans-serif" font-size="8" letter-spacing="8" text-anchor="middle">★★★</text>
+                    </svg>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Order ID:</span>
+                    <span class="text-white font-bold" x-text="receiptData.invoice_no"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Date/Time:</span>
+                    <span class="text-white font-bold" x-text="receiptData.date + ' ' + receiptData.time"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Customer:</span>
+                    <span class="text-white font-bold" x-text="receiptData.customer_name"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Route Delivery:</span>
+                    <span class="text-white font-bold" x-text="receiptData.route || 'Direct POS'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Payment:</span>
+                    <span class="text-white font-bold" x-text="receiptData.method"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Served By:</span>
+                    <span class="text-white font-bold">Storefront System</span>
+                </div>
+                <hr class="border-glassBorder">
+                
+                <div class="flex flex-col gap-1.5">
+                    <template x-for="item in receiptData.items" :key="item.sku">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400 text-left" x-text="item.name + ' x' + item.qty"></span>
+                            <span class="text-white font-bold" x-text="'₱' + formatCurrency(item.total)"></span>
+                        </div>
+                    </template>
+                </div>
+                
+                <hr class="border-glassBorder">
+                <hr class="border-glassBorder">
+                <div class="flex justify-between text-sm font-extrabold text-white">
+                    <span>Grand Total:</span>
+                    <span class="text-accentCyan" x-text="'₱' + formatCurrency(receiptData.total)"></span>
+                </div>
+            </div>
+            
+            <!-- Barcode & QR Code Images -->
+            <div class="flex flex-col items-center gap-3 pt-3 border-t border-glassBorder">
+                <!-- QR Code image served by Django -->
+                <div class="bg-white p-3 rounded-lg">
+                    <img :src="'/api/qrcode/' + receiptData.invoice_no + '/'" alt="QR Code Checkout" class="w-32 h-32">
+                </div>
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Invoice Code</p>
+                
+                <!-- Barcode image served by Django -->
+                <div class="w-full">
+                    <img :src="'/api/barcode/' + receiptData.invoice_no + '/'" alt="Barcode Receipt" class="h-14 mx-auto object-contain">
+                </div>
+            </div>
+
+            <!-- Receipt Footer Note -->
+            <div class="text-center pt-3 text-[10px] text-slate-500 dark:text-gray-400 border-t border-glassBorder/60 font-mono mt-3">
+                <p>Thank you for shopping with us!</p>
+                <p>Please keep this receipt for your reference.</p>
+            </div>
+            
+            <div class="mt-6 flex items-center gap-2 no-print">
+                <button @click="printReceipt()" class="flex-grow bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Print Receipt
+                </button>
+                <button @click="showReceipt = false" class="flex-grow bg-accentBlue hover:bg-accentBlue/80 text-white font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL 4: Camera Barcode Scanner -->
+    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30">
+            <button @click="stopCameraScanner()" class="absolute top-4 right-4 text-gray-550 hover:text-white">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            <h3 class="text-base font-bold text-white mb-4 pb-2 border-b border-glassBorder flex items-center gap-2">
+                <i class="fa-solid fa-camera text-accentCyan"></i> Live Camera Barcode Scanner
+            </h3>
+            
+            <div class="relative w-full overflow-hidden rounded-xl border border-glassBorder bg-gray-950/40 p-1 mb-4">
+                <div id="store-scanner-reader" class="w-full h-64 bg-black/20"></div>
+                
+                <!-- Laser line animation -->
+                <div class="absolute inset-x-0 h-0.5 bg-red-500/80 shadow-md shadow-red-500/50 animate-laser"></div>
+            </div>
+            
+            <p class="text-center text-xs text-gray-400 leading-relaxed mb-4">
+                Position the product barcode inside the camera frame. Ensure adequate lighting.
+            </p>
+            
+            <button @click="stopCameraScanner()" class="w-full bg-gray-850 hover:bg-gray-800 text-white font-bold py-2.5 rounded-xl text-xs transition-all">
+                Cancel / Close Scanner
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function storeApp() {
+        return {
+            categories: [],
+            brands: [],
+            products: [],
+            customers: [],
+            cart: [],
+            
+            searchQuery: '',
+            selectedCategory: '',
+            selectedBrand: '',
+            showDropdown: false,
+            
+            loyaltyContact: '',
+            searchedCustomer: null,
+            
+            isCustomerLoggedIn: "{% if logged_customer %}true{% else %}false{% endif %}" === "true",
+            loggedInCustomerName: "{{ logged_customer.name|default:'' }}",
+            checkoutCustomerId: "{{ logged_customer.id|default:'' }}",
+            checkoutPaymentMethod: 'Cash',
+            checkoutRoute: '',
+            
+            isSubmitting: false,
+            showReceipt: false,
+            receiptData: {},
+            showScannerModal: false,
+            scannerHtml5: null,
+            
+            initStore() {
+                this.loadState();
+            },
+            
+            async loadState() {
+                try {
+                    let res = await fetch('/api/state');
+                    let data = await res.json();
+                    
+                    this.categories = data.categories || [];
+                    this.brands = data.brands || [];
+                    this.customers = data.customers || [];
+                    
+                    // Initialize buyQty for UI on products list
+                    this.products = (data.products || []).map(p => {
+                        p.buyQty = 1;
+                        return p;
+                    });
+                } catch (e) {
+                    console.error("Error loading storefront state: ", e);
+                }
+            },
+            
+            filteredProducts() {
+                return this.products.filter(p => {
+                    let matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                        p.sku.toLowerCase().includes(this.searchQuery.toLowerCase());
+                    let matchesCategory = this.selectedCategory === '' || p.category === this.selectedCategory;
+                    let matchesBrand = this.selectedBrand === '' || p.brand === parseInt(this.selectedBrand);
+                    return matchesSearch && matchesCategory && matchesBrand;
+                });
+            },
+            
+            addToCart(product, type) {
+                let qty = parseInt(product.buyQty) || 1;
+                if (qty <= 0) return;
+                
+                // Fetch price based on wholesale or retail selection
+                let price = type === 'wholesale' ? parseFloat(product.wholesale_price) : parseFloat(product.retail_price);
+                let total = price * qty;
+                
+                // Check if product exists in cart with same price type
+                let existing = this.cart.find(item => item.sku === product.sku && item.priceType === type);
+                if (existing) {
+                    existing.qty += qty;
+                    existing.total = existing.qty * existing.price;
+                } else {
+                    this.cart.push({
+                        sku: product.sku,
+                        name: product.name,
+                        price: price,
+                        qty: qty,
+                        priceType: type,
+                        total: total,
+                        image_url: product.image_url
+                    });
+                }
+                
+                product.buyQty = 1; // reset input
+            },
+            
+            removeFromCart(index) {
+                this.cart.splice(index, 1);
+            },
+            
+            cartSubtotal() {
+                return this.cart.reduce((sum, item) => sum + item.total, 0);
+            },
+            
+            cartTax() {
+                // 12% VAT is included in sales total
+                return this.cartSubtotal() * 0.12;
+            },
+            
+            cartTotal() {
+                return this.cartSubtotal();
+            },
+            
+            lookupLoyalty() {
+                if (!this.loyaltyContact.trim()) return;
+                let c = this.customers.find(cust => 
+                    cust.name.toLowerCase().includes(this.loyaltyContact.toLowerCase()) || 
+                    (cust.contact && cust.contact.includes(this.loyaltyContact))
+                );
+                this.searchedCustomer = c || null;
+                if (!c) {
+                    alert("Customer loyalty card or record not found.");
+                }
+            },
+            
+            async submitOrder() {
+                if (this.cart.length === 0) return;
+                this.isSubmitting = true;
+                
+                // Generate Invoice No: DRAFT-YYYYMMDD-XXXX
+                let rand = Math.floor(1000 + Math.random() * 9000);
+                let dateStr = new Date().toISOString().slice(0,10).replace(/-/g,"");
+                let invoice_no = `DFT-${dateStr}-${rand}`;
+                
+                let subtotal = this.cartSubtotal();
+                let tax = this.cartTax();
+                let total = this.cartTotal();
+                
+                let itemsPayload = this.cart.map(item => ({
+                    product_sku: item.sku,
+                    qty: item.qty,
+                    price: item.price,
+                    total: item.total
+                }));
+                
+                let payload = {
+                    action: "create_sale",
+                    invoice_no: invoice_no,
+                    customer_id: this.checkoutCustomerId || null,
+                    salesman_id: null,
+                    route: this.checkoutRoute || null,
+                    subtotal: subtotal,
+                    tax: tax,
+                    total: total,
+                    method: this.checkoutPaymentMethod,
+                    status: "Draft", // Draft order allows cashier to scan & modify or complete at POS
+                    items: itemsPayload
+                };
+                
+                try {
+                    let res = await fetch('/api/state', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    let resData = await res.json();
+                    if (resData.success) {
+                        // Populate checkout receipt details
+                        let selectedCust = this.customers.find(c => c.id == this.checkoutCustomerId);
+                        this.receiptData = {
+                            invoice_no: invoice_no,
+                            customer_name: selectedCust ? selectedCust.name : "Walk-in",
+                            route: this.checkoutRoute,
+                            method: this.checkoutPaymentMethod,
+                            total: total,
+                            items: this.cart,
+                            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                        };
+                        
+                        this.showReceipt = true;
+                        this.cart = []; // clear cart
+                        this.checkoutCustomerId = '';
+                        this.checkoutRoute = '';
+                        this.loadState(); // reload catalog stock levels
+                    } else {
+                        alert("Error submitting order: " + resData.error);
+                    }
+                } catch(e) {
+                    console.error("Submitting error: ", e);
+                    alert("Network error submitting draft checkout.");
+                } finally {
+                    this.isSubmitting = false;
+                }
+            },
+            
+            printReceipt() {
+                window.print();
+            },
+
+            triggerBarcodeScan() {
+                this.showScannerModal = true;
+                this.$nextTick(() => {
+                    this.startCameraScanner();
+                });
+            },
+            
+            async startCameraScanner() {
+                if (this.scannerHtml5) {
+                    try {
+                        if (this.scannerHtml5.isScanning) {
+                            await this.scannerHtml5.stop();
+                        }
+                    } catch(e) {}
+                    try {
+                        this.scannerHtml5.clear();
+                    } catch(e) {}
+                    this.scannerHtml5 = null;
+                }
+                
+                // Explicitly request specific barcode formats to speed up scanning & improve accuracy
+                const formats = window.Html5QrcodeSupportedFormats ? [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ] : undefined;
+                
+                const html5QrCode = new Html5Qrcode("store-scanner-reader", formats ? { formatsToSupport: formats } : undefined);
+                this.scannerHtml5 = html5QrCode;
+                
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    this.handleScannedBarcode(decodedText);
+                };
+                
+                // Set facingMode constraint as the camera identifier
+                const cameraConstraint = { facingMode: "environment" };
+                
+                // Request HD resolution & high framerate for crystal clear barcode recognition
+                // We use ideal constraint values inside videoConstraints so the browser automatically falls back
+                // instead of throwing an OverconstrainedError.
+                const config = {
+                    fps: 15, // 15 FPS is optimal for mobile CPU processing
+                    qrbox: (width, height) => {
+                        // Make it take 85% of width and 70% of height for a much larger scan area
+                        return {
+                            width: Math.min(width * 0.85, 480),
+                            height: Math.min(height * 0.70, 260)
+                        };
+                    },
+                    aspectRatio: 1.7777778,
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true // Uses native OS/Browser barcode API (extremely fast & sensitive)
+                    },
+                    videoConstraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: "environment"
+                    }
+                };
+                
+                try {
+                    await html5QrCode.start(cameraConstraint, config, qrCodeSuccessCallback);
+                } catch(err) {
+                    console.error("Storefront camera scan failed completely: ", err);
+                    if (this.products.length > 0) {
+                        let randomProd = this.products[Math.floor(Math.random() * this.products.length)];
+                        this.addToCart(randomProd, 'retail');
+                        alert(`[Camera Access Fallback]\nSimulated scanner read: Barcode of ${randomProd.name}`);
+                    }
+                    this.showScannerModal = false;
+                }
+            },
+            
+            stopCameraScanner() {
+                if (this.scannerHtml5) {
+                    this.scannerHtml5.stop().then(() => {
+                        this.scannerHtml5.clear();
+                        this.scannerHtml5 = null;
+                    }).catch(err => {
+                        console.error("Failed to stop scanner: ", err);
+                        this.scannerHtml5 = null;
+                    });
+                }
+                this.showScannerModal = false;
+            },
+            
+            handleScannedBarcode(barcodeText) {
+                let query = barcodeText.trim();
+                if (!query) return;
+                
+                let prod = this.products.find(p => p.sku === query || (p.barcode && p.barcode === query));
+                if (!prod) {
+                    prod = this.products.find(p => p.sku.toLowerCase() == query.toLowerCase() || (p.barcode && p.barcode.toLowerCase() == query.toLowerCase()));
+                }
+                
+                if (prod) {
+                    if (prod.stock_quantity > 0) {
+                        this.addToCart(prod, 'retail');
+                        
+                        try {
+                            let context = new (window.AudioContext || window.webkitAudioContext)();
+                            let osc = context.createOscillator();
+                            osc.type = "sine";
+                            osc.frequency.setValueAtTime(1000, context.currentTime);
+                            osc.connect(context.destination);
+                            osc.start();
+                            osc.stop(context.currentTime + 0.1);
+                        } catch(e) {}
+                        
+                        this.stopCameraScanner();
+                    } else {
+                        alert(`Product ${prod.name} is out of stock!`);
+                    }
+                } else {
+                    alert(`No product found matching barcode: ${query}`);
+                }
+            },
+
+            handleStorefrontSearchEnter() {
+                let query = this.searchQuery.trim();
+                if (!query) return;
+                
+                let prod = this.products.find(p => p.sku === query || (p.barcode && p.barcode === query));
+                if (!prod) {
+                    prod = this.products.find(p => p.sku.toLowerCase() == query.toLowerCase() || (p.barcode && p.barcode.toLowerCase() == query.toLowerCase()));
+                }
+                
+                if (prod) {
+                    if (prod.stock_quantity > 0) {
+                        this.addToCart(prod, 'retail');
+                        this.searchQuery = ''; // Clear search field
+                    } else {
+                        alert(`Product ${prod.name} is out of stock!`);
+                    }
+                } else {
+                    // If no exact match is found, just keep the query to filter the cards list
+                }
+            },
+            
+            selectProductFromDropdown(product) {
+                this.searchQuery = product.name;
+                this.showDropdown = false;
+            },
+            
+            formatCurrency(val) {
+                return parseFloat(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        };
+    }
+</script>
+{% endblock %}

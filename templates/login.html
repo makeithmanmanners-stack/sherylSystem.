@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Sheryl Premium ERP</title>
+    
+    <!-- Theme Bootstrap Script (Runs immediately to prevent flash) -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('color-theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#0b0f19',
+                        darkCard: 'rgba(17, 24, 39, 0.7)',
+                        accentBlue: '#2563eb',
+                        accentCyan: '#06b6d4',
+                        accentGreen: '#10b981',
+                        glassBorder: 'rgba(255, 255, 255, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        // Theme Helper Functions
+        function updateTheme(theme) {
+            localStorage.setItem('color-theme', theme);
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: theme }));
+        }
+
+        // Listen for system changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const currentTheme = localStorage.getItem('color-theme') || 'system';
+            if (currentTheme === 'system') {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        });
+
+        // Sync tabs/windows
+        window.addEventListener('storage', e => {
+            if (e.key === 'color-theme') {
+                const newTheme = e.newValue || 'system';
+                updateTheme(newTheme);
+                window.dispatchEvent(new CustomEvent('theme-updated-externally', { detail: newTheme }));
+            }
+        });
+    </script>
+    
+    <style>
+        /* Light Mode Styles (Default) */
+        body {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0f172a;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            color: #0f172a;
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Dark Mode overrides */
+        html.dark body {
+            background-color: #0b0f19;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
+            color: #f3f4f6;
+        }
+        
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        html.dark .glass-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center font-sans p-4 relative overflow-hidden">
+
+    <!-- Floating Theme Switcher Button -->
+    <div class="absolute top-4 right-4 z-50" x-data="{ currentTheme: localStorage.getItem('color-theme') || 'system', setTheme(theme) { this.currentTheme = theme; updateTheme(theme); }, open: false }" @theme-updated-externally.window="currentTheme = $event.detail">
+        <button @click="open = !open" class="text-slate-500 dark:text-gray-400 hover:text-accentCyan dark:hover:text-accentCyan focus:outline-none p-2.5 rounded-xl bg-slate-200/50 hover:bg-slate-200 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 border border-slate-200/60 dark:border-glassBorder flex items-center justify-center transition-all shadow-sm" title="Change Theme">
+            <template x-if="currentTheme === 'dark'">
+                <i class="fa-solid fa-moon text-sm"></i>
+            </template>
+            <template x-if="currentTheme === 'light'">
+                <i class="fa-solid fa-sun text-sm text-amber-500"></i>
+            </template>
+            <template x-if="currentTheme === 'system'">
+                <i class="fa-solid fa-desktop text-sm"></i>
+            </template>
+        </button>
+        <div x-show="open" @click.away="open = false" 
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="transform opacity-0 scale-95"
+             x-transition:enter-end="transform opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="transform opacity-100 scale-100"
+             x-transition:leave-end="transform opacity-0 scale-95"
+             class="absolute right-0 mt-2 w-32 glass-card p-1 shadow-xl z-50 flex flex-col gap-0.5 text-xs" 
+             style="display: none;">
+            <button @click="setTheme('light'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'light' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                <i class="fa-solid fa-sun w-4 text-center text-amber-500"></i> Light
+            </button>
+            <button @click="setTheme('dark'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'dark' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                <i class="fa-solid fa-moon w-4 text-center"></i> Dark
+            </button>
+            <button @click="setTheme('system'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'system' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                <i class="fa-solid fa-desktop w-4 text-center"></i> System
+            </button>
+        </div>
+    </div>
+
+    <!-- Decorative background glow spheres -->
+    <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-accentBlue/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accentCyan/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="glass-card max-w-md w-full p-8 relative z-10 border border-slate-200/60 dark:border-white/10 flex flex-col items-center">
+        <!-- Logo & Header -->
+        <div class="bg-gradient-to-tr from-accentBlue to-accentCyan p-3.5 rounded-2xl shadow-xl shadow-accentBlue/20 mb-4">
+            <i class="fa-solid fa-shield-halved text-2xl text-white"></i>
+        </div>
+        <h2 class="text-xl font-black bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:via-gray-200 dark:to-gray-400 bg-clip-text text-transparent uppercase tracking-wider text-center">
+            Sheryl Premium ERP
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-gray-400 text-center mt-1 mb-8 font-medium">Please sign in to access the administrator panel</p>
+
+        {% if error_message %}
+        <div class="w-full mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3 text-xs text-red-400">
+            <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
+            <span>{{ error_message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        <form action="{% url 'login' %}" method="POST" class="w-full flex flex-col gap-5">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Username</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-550">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" name="username" required placeholder="Enter username..." class="w-full glass-input rounded-xl pl-10 pr-4 py-3 text-sm">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide">Password</label>
+                </div>
+                <div class="relative" x-data="{ showPw: false }">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-550">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input :type="showPw ? 'text' : 'password'" name="password" required placeholder="Enter password..." class="w-full glass-input rounded-xl pl-10 pr-10 py-3 text-sm">
+                    <button type="button" @click="showPw = !showPw" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-550 hover:text-slate-800 dark:hover:text-white transition-colors">
+                        <i class="fa-solid" :class="showPw ? 'fa-eye-slash' : 'fa-eye'"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full mt-4 bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-black py-3 rounded-xl text-xs tracking-wider uppercase shadow-lg shadow-accentBlue/20 hover:shadow-accentBlue/30 transition-all active:scale-[0.98]">
+                Sign In to Dashboard
+            </button>
+        </form>
+
+        <!-- Sign Up Link / Back to Storefront Link -->
+        <div class="mt-8 pt-4 border-t border-slate-200/50 dark:border-glassBorder w-full text-center flex flex-col gap-2.5">
+            <a href="{% url 'signup' %}" class="text-xs text-accentCyan hover:underline transition-colors font-bold">
+                New Store Owner? <b>Register / Sign Up here</b>
+            </a>
+            <a href="{% url 'store_front' %}" class="text-xs text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-1.5 mt-1">
+                <i class="fa-solid fa-arrow-left-long"></i> Back to Public Storefront
+            </a>
+        </div>
+    </div>
+
+    <!-- Alpine.js (for password toggle view) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+</html>

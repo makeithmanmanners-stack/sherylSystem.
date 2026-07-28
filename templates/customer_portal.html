@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Loyalty Portal | Sheryl ERP</title>
+    
+    <!-- Theme Bootstrap Script (Runs immediately to prevent flash) -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('color-theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Camera Scanner CDN -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;550;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#0b0f19',
+                        darkCard: 'rgba(17, 24, 39, 0.7)',
+                        accentBlue: '#2563eb',
+                        accentCyan: '#06b6d4',
+                        accentGreen: '#10b981',
+                        accentOrange: '#f97316',
+                        glassBorder: 'rgba(255, 255, 255, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        // Theme Helper Functions
+        function updateTheme(theme) {
+            localStorage.setItem('color-theme', theme);
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: theme }));
+        }
+
+        // Listen for system changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const currentTheme = localStorage.getItem('color-theme') || 'system';
+            if (currentTheme === 'system') {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+        });
+
+        // Sync tabs/windows
+        window.addEventListener('storage', e => {
+            if (e.key === 'color-theme') {
+                const newTheme = e.newValue || 'system';
+                updateTheme(newTheme);
+                window.dispatchEvent(new CustomEvent('theme-updated-externally', { detail: newTheme }));
+            }
+        });
+    </script>
+    
+    <style>
+        /* Light Mode Styles (Default) */
+        body {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0f172a;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 1rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            color: #0f172a;
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Dark Mode overrides */
+        html.dark body {
+            background-color: #0b0f19;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+            color: #f3f4f6;
+        }
+        
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        html.dark .glass-input {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Watermark Styles */
+        .receipt-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            width: 250px;
+            height: 250px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.05;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .receipt-watermark svg * {
+            stroke: currentColor;
+        }
+        .receipt-watermark svg text {
+            fill: currentColor;
+            stroke: none;
+        }
+        #receipt-print-area > div:not(.receipt-watermark) {
+            position: relative;
+            z-index: 10;
+        }
+        .receipt-watermark ~ div, 
+        .receipt-watermark ~ hr,
+        .receipt-watermark ~ template {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans" x-data="customerApp()" x-init="initCustomer()">
+
+    <!-- Header -->
+    <header class="glass-card m-4 mb-2 p-4 flex items-center justify-between shadow-lg relative z-40"
+            x-data="{ 
+                currentTheme: localStorage.getItem('color-theme') || 'system',
+                setTheme(theme) {
+                    this.currentTheme = theme;
+                    updateTheme(theme);
+                }
+            }"
+            @theme-updated-externally.window="currentTheme = $event.detail">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-accentBlue to-accentCyan p-3.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-gift text-white text-base animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-extrabold tracking-tight text-slate-800 dark:text-white uppercase animate-pulse" x-text="customerName">
+                    Customer Portal
+                </h1>
+                <p class="text-[10px] text-accentCyan font-bold">Loyalty & Online Ordering</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p class="text-xs font-bold text-slate-800 dark:text-white" x-text="customerName"></p>
+                <p class="text-[9px] text-accentGreen font-extrabold uppercase tracking-wider">Store Partner</p>
+            </div>
+            
+            <!-- Theme Selector Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="text-slate-500 dark:text-gray-400 hover:text-accentCyan dark:hover:text-accentCyan focus:outline-none p-1.5 rounded-lg bg-slate-200/50 hover:bg-slate-200 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 border border-slate-200/60 dark:border-glassBorder flex items-center justify-center transition-all shadow-sm" title="Change Theme">
+                    <template x-if="currentTheme === 'dark'">
+                        <i class="fa-solid fa-moon text-xs"></i>
+                    </template>
+                    <template x-if="currentTheme === 'light'">
+                        <i class="fa-solid fa-sun text-xs text-amber-500"></i>
+                    </template>
+                    <template x-if="currentTheme === 'system'">
+                        <i class="fa-solid fa-desktop text-xs"></i>
+                    </template>
+                </button>
+                <div x-show="open" @click.away="open = false" 
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-32 glass-card p-1 shadow-xl z-50 flex flex-col gap-0.5 text-xs" 
+                     style="display: none;">
+                    <button @click="setTheme('light'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'light' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-sun w-4 text-center text-amber-500"></i> Light
+                    </button>
+                    <button @click="setTheme('dark'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'dark' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-moon w-4 text-center"></i> Dark
+                    </button>
+                    <button @click="setTheme('system'); open = false" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-accentBlue/10 transition-colors w-full" :class="currentTheme === 'system' ? 'text-accentCyan font-bold' : 'text-slate-700 dark:text-gray-300'">
+                        <i class="fa-solid fa-desktop w-4 text-center"></i> System
+                    </button>
+                </div>
+            </div>
+            
+            <div class="h-4 w-[1px] bg-slate-200 dark:bg-glassBorder"></div>
+            <a href="{% url 'logout' %}" class="bg-slate-200/50 hover:bg-red-500/10 dark:bg-gray-800/80 hover:text-red-400 text-slate-750 dark:text-gray-300 font-bold py-1.5 px-3 rounded-lg text-[10px] transition-colors border border-slate-200/60 dark:border-glassBorder hover:border-red-500/20">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+            </a>
+        </div>
+    </header>
+
+    <!-- Sub-tab Navigation -->
+    <div class="px-4 mb-2 flex gap-2">
+        <button @click="portalTab = 'dashboard'" :class="portalTab === 'dashboard' ? 'bg-accentBlue text-white shadow-lg shadow-accentBlue/10' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-gauge-high"></i> My Dashboard
+        </button>
+        <button @click="portalTab = 'order'" :class="portalTab === 'order' ? 'bg-accentBlue text-white shadow-lg shadow-accentBlue/10' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-cart-shopping"></i> Order Products
+        </button>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    
+    <!-- SUB-TAB 1: Dashboard -->
+    <div x-show="portalTab === 'dashboard'" class="flex-grow px-4 pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4" x-transition>
+        
+        <!-- Left Column: Details Cards -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- Store Profile Details -->
+            <div class="glass-card p-5 border border-glassBorder flex flex-col gap-3">
+                <div class="flex items-center gap-3 pb-3 border-b border-glassBorder">
+                    <div class="w-10 h-10 rounded-full bg-accentBlue/20 border border-accentBlue/30 flex items-center justify-center text-accentBlue">
+                        <i class="fa-solid fa-store text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-extrabold text-sm text-white" x-text="customerName"></h2>
+                        <span class="text-[9px] bg-accentCyan/15 text-accentCyan px-2 py-0.5 rounded font-extrabold uppercase">Wholesale Store Partner</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col gap-2.5 text-xs text-gray-400">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] uppercase tracking-wider font-bold text-gray-500">Contact Number</span>
+                        <span class="text-gray-200 mt-0.5 font-semibold" x-text="customerContact || 'No phone registered'"></span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[9px] uppercase tracking-wider font-bold text-gray-500">Delivery Address</span>
+                        <span class="text-gray-200 mt-0.5 font-semibold" x-text="customerAddress || 'No address registered'"></span>
+                    </div>
+                </div>
+                
+                <button @click="portalTab = 'order'" class="w-full mt-2 bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold py-2.5 rounded-xl text-xs text-center transition-all hover:brightness-110 flex items-center justify-center gap-1.5 shadow-lg shadow-accentBlue/15">
+                    <i class="fa-solid fa-cart-shopping"></i> Order Products Online
+                </button>
+            </div>
+
+            <!-- Loyalty Points Card -->
+            <div class="glass-card p-5 border border-accentGreen/20 bg-gradient-to-br from-gray-900/40 via-transparent to-accentGreen/5 flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-accentGreen uppercase tracking-wider"><i class="fa-solid fa-star mr-1"></i> Loyalty Points</span>
+                    <span class="text-xs font-black text-white" x-text="customerPoints + ' pts'"></span>
+                </div>
+                <div class="flex items-baseline gap-1 mt-1">
+                    <span class="text-3xl font-black text-white" x-text="customerPoints"></span>
+                    <span class="text-[10px] text-gray-550 font-bold">Reward Points</span>
+                </div>
+                
+                <div class="mt-2">
+                    <div class="flex justify-between text-[9px] text-gray-500 font-bold mb-1">
+                        <span>Tier Progress</span>
+                        <span x-text="customerPoints + ' / 1,000 pts'"></span>
+                    </div>
+                    <div class="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-glassBorder/60">
+                        <div :style="'width: ' + Math.min(100, (customerPoints / 1000) * 100) + '%'" class="h-full bg-gradient-to-r from-accentGreen to-emerald-400 rounded-full transition-all duration-500"></div>
+                    </div>
+                    <span class="text-[8px] text-gray-550 block mt-1.5 leading-relaxed">Collect 1,000 points to redeem a <b>₱500.00 discount voucher</b> on your next delivery!</span>
+                </div>
+            </div>
+
+            <!-- Credit Balance Card -->
+            <div class="glass-card p-5 border border-accentOrange/20 bg-gradient-to-br from-gray-900/40 via-transparent to-accentOrange/5 flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-accentOrange uppercase tracking-wider"><i class="fa-solid fa-credit-card mr-1"></i> Credit Account</span>
+                    <span class="text-xs font-black text-red-400" x-text="'₱' + formatCurrency(customerCreditBalance)"></span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-1">
+                    <div>
+                        <span class="text-[9px] text-gray-500 font-bold block">Credit Limit</span>
+                        <span class="text-sm font-extrabold text-white" x-text="'₱' + formatCurrency(customerCreditLimit)"></span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] text-gray-500 font-bold block">Available Credit</span>
+                        <span class="text-sm font-extrabold text-accentGreen" x-text="'₱' + formatCurrency(customerCreditLimit - customerCreditBalance)"></span>
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    <div class="flex justify-between text-[9px] text-gray-500 font-bold mb-1">
+                        <span>Credit Utilized</span>
+                        <span x-text="(customerCreditLimit > 0 ? Math.round((customerCreditBalance / customerCreditLimit) * 100) : 0) + '%'"></span>
+                    </div>
+                    <div class="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-glassBorder/60">
+                        <div :style="'width: ' + (customerCreditLimit > 0 ? Math.min(100, (customerCreditBalance / customerCreditLimit) * 100) : 0) + '%'" class="h-full bg-gradient-to-r from-accentOrange to-amber-500 rounded-full transition-all duration-500"></div>
+                    </div>
+                </div>
+                
+                <button @click="showPaymentModal = true" class="w-full mt-2 bg-gray-850 hover:bg-gray-700 text-white font-bold py-2 rounded-xl border border-glassBorder text-xs text-center flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-receipt text-accentCyan"></i> Log Credit GCash Payment
+                </button>
+            </div>
+        </div>
+        
+        <!-- Right Column: Purchase History (Span 2) -->
+        <div class="lg:col-span-2 glass-card p-5 border border-glassBorder flex flex-col gap-4">
+            <div class="pb-3 border-b border-glassBorder">
+                <h3 class="font-extrabold text-sm text-white">Your Purchase History</h3>
+                <p class="text-[10px] text-gray-500 mt-0.5">Track your orders, check payment methods, and monitor delivery dispatch status.</p>
+            </div>
+            
+            <div class="overflow-x-auto flex-grow max-h-[calc(100vh-220px)]">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-glassBorder bg-gray-950/40 text-gray-400 font-semibold">
+                            <th class="p-3">Invoice No</th>
+                            <th class="p-3">Order Date</th>
+                            <th class="p-3">Method</th>
+                            <th class="p-3 text-right">Grand Total</th>
+                            <th class="p-3 text-center">Status</th>
+                            <th class="p-3">Ordered Items</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glassBorder">
+                        <template x-for="sale in filteredSales" :key="sale.invoice_no">
+                            <tr class="hover:bg-gray-950/20 transition-colors">
+                                <td class="p-3 font-mono font-bold text-white" x-text="sale.invoice_no"></td>
+                                <td class="p-3 text-gray-400 font-mono" x-text="sale.date ? sale.date.slice(0,10) : 'N/A'"></td>
+                                <td class="p-3">
+                                    <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold" x-text="sale.method"></span>
+                                </td>
+                                <td class="p-3 text-right font-bold text-accentCyan" x-text="'₱' + formatCurrency(sale.total)"></td>
+                                <td class="p-3 text-center">
+                                    <span :class="sale.status === 'Draft' ? 'bg-accentOrange/15 text-accentOrange border-accentOrange/20' : 'bg-accentGreen/15 text-accentGreen border-accentGreen/20'" class="px-2.5 py-0.5 border rounded-full text-[9px] font-extrabold" x-text="sale.status"></span>
+                                </td>
+                                <td class="p-3 text-gray-300 text-[10px] leading-relaxed">
+                                    <template x-for="item in sale.items" :key="item.product_sku">
+                                        <span class="block font-mono" x-text="'- ' + (item.product_name || item.product_sku) + ' x' + item.qty"></span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="filteredSales.length === 0">
+                            <tr>
+                                <td colspan="6" class="p-8 text-center text-gray-500">
+                                    No purchase transactions recorded yet.
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUB-TAB 2: Order Products Catalog (Storefront) -->
+    <div x-show="portalTab === 'order'" class="flex-grow px-4 pb-4 flex flex-col lg:flex-row gap-4" x-transition>
+        
+        <!-- Left Panel: Products List -->
+        <div class="flex-grow glass-card p-5 flex flex-col lg:w-2/3">
+            
+            <!-- Filters Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 relative z-20">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-magnifying-glass text-gray-500 text-xs"></i>
+                    </span>
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @focus="showDropdown = true"
+                           @input="showDropdown = true"
+                           @keydown.enter="handleSearchEnter()"
+                           placeholder="Scan Barcode or Search Product..." 
+                           class="w-full glass-input rounded-xl pl-8 pr-4 py-2 text-xs">
+                    
+                    <!-- Search Suggestions Dropdown -->
+                    <div x-show="showDropdown && searchQuery.trim().length > 0" 
+                         class="absolute left-0 right-0 mt-2 bg-[#111827] border border-glassBorder rounded-xl shadow-2xl z-50 overflow-y-auto max-h-80 divide-y divide-glassBorder"
+                         @click.away="showDropdown = false"
+                         x-transition>
+                        <template x-for="prod in filteredProducts()" :key="prod.sku">
+                            <div class="p-3 hover:bg-gray-800/80 transition-colors flex items-center justify-between gap-3 cursor-pointer"
+                                 @click="selectProductFromDropdown(prod)">
+                                <div class="min-w-0 flex-grow">
+                                    <div class="flex items-center gap-1.5 mb-1">
+                                        <span class="text-[9px] font-bold text-accentCyan bg-accentCyan/15 px-1.5 py-0.5 rounded uppercase" x-text="prod.category_name"></span>
+                                        <span class="text-[9px] font-semibold text-gray-500 font-mono" x-text="prod.sku"></span>
+                                    </div>
+                                    <h4 class="font-bold text-white text-xs truncate" x-text="prod.name"></h4>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <select x-model="selectedCategory" class="w-full glass-input rounded-xl px-3 py-2 text-xs">
+                        <option value="">All Categories</option>
+                        <template x-for="cat in categories" :key="cat.id">
+                            <option :value="cat.id" x-text="cat.name"></option>
+                        </template>
+                    </select>
+                    <button @click="triggerBarcodeScan()" class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-xl border border-glassBorder shrink-0">
+                        <i class="fa-solid fa-barcode text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span class="text-accentCyan font-bold uppercase">Wholesale Storefront</span>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="flex-grow grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto max-h-[calc(100vh-270px)] pr-2 content-start">
+                <template x-for="prod in filteredProducts()" :key="prod.sku">
+                    <div class="glass-card p-4 flex flex-col justify-between min-h-[420px] hover:border-accentBlue/40 transition-all duration-300 relative group overflow-hidden bg-gray-900/10">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-tr from-transparent to-accentBlue/5 rounded-bl-full group-hover:to-accentBlue/10 transition-all"></div>
+                        
+                        <div>
+                            <!-- Category Tag & Stock Status -->
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-accentCyan bg-accentCyan/10 px-2 py-0.5 rounded" x-text="prod.category_name"></span>
+                                
+                                <template x-if="prod.stock_quantity <= 0">
+                                    <span class="text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded">Out of Stock</span>
+                                </template>
+                                <template x-if="prod.stock_quantity > 0 && prod.stock_quantity <= prod.min_stock">
+                                    <span class="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded">Low Stock</span>
+                                </template>
+                                <template x-if="prod.stock_quantity > prod.min_stock">
+                                    <span class="text-[10px] font-bold text-accentGreen bg-accentGreen/10 px-2 py-0.5 rounded" x-text="prod.stock_quantity + ' cases left'"></span>
+                                </template>
+                            </div>
+                            
+                            <!-- Product Image -->
+                            <div class="w-full h-36 bg-gray-950/40 rounded-xl overflow-hidden mb-3 border border-glassBorder/40 flex items-center justify-center relative">
+                                <template x-if="prod.image_url">
+                                    <img :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-350">
+                                </template>
+                                <template x-if="!prod.image_url">
+                                    <div class="text-gray-655 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-box text-3xl"></i>
+                                        <span class="text-[9px] uppercase tracking-widest font-semibold text-gray-500">No Image</span>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- Title & Brand -->
+                            <h3 class="font-bold text-sm text-white group-hover:text-accentBlue transition-colors truncate" x-text="prod.name"></h3>
+                            <p class="text-[10px] text-gray-500 mt-0.5" x-text="prod.brand_name"></p>
+                            
+                            <!-- Price Badges -->
+                            <div class="mt-4 grid grid-cols-2 gap-2 bg-gray-900/50 p-2.5 rounded-xl border border-glassBorder">
+                                <div>
+                                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Retail Price (Single)</span>
+                                    <span class="text-sm font-extrabold text-white" x-text="'₱' + formatCurrency(prod.retail_price)"></span>
+                                </div>
+                                <div class="border-l border-glassBorder pl-2">
+                                    <span class="text-[9px] font-bold text-accentCyan uppercase tracking-wider block">Wholesale (Case)</span>
+                                    <span class="text-sm font-extrabold text-accentCyan" x-text="'₱' + formatCurrency(prod.wholesale_price)"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-3 border-t border-glassBorder flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs text-gray-400">Qty:</span>
+                                <input type="number" x-model.number="prod.buyQty" min="1" class="w-12 bg-gray-900 border border-glassBorder text-center text-xs font-semibold rounded py-0.5 focus:outline-none focus:border-accentBlue">
+                            </div>
+                            
+                            <div class="flex-grow flex items-center gap-1">
+                                <button @click="addToCart(prod, 'retail')" :disabled="prod.stock_quantity <= 0" class="flex-grow py-1 px-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[10px] font-bold text-gray-200 transition-all">
+                                    + Retail
+                                </button>
+                                <button @click="addToCart(prod, 'wholesale')" :disabled="prod.stock_quantity <= 0" class="flex-grow py-1 px-1.5 bg-accentBlue hover:bg-accentBlue/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[10px] font-bold text-white transition-all">
+                                    + Whole
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Right Panel: Cart & Checkout -->
+        <div class="lg:w-1/3 flex flex-col gap-4">
+            
+            <!-- Cart details -->
+            <div class="glass-card p-5 flex flex-col justify-between flex-grow min-h-[300px]">
+                <div>
+                    <h3 class="font-extrabold text-xs text-white mb-2 pb-2 border-b border-glassBorder flex justify-between">
+                        <span>Shopping Cart</span>
+                        <span class="text-accentBlue" x-text="'₱' + formatCurrency(cartTotal())"></span>
+                    </h3>
+                    
+                    <div class="overflow-y-auto max-h-[220px] flex flex-col gap-1.5">
+                        <template x-if="cart.length === 0">
+                            <div class="text-center text-gray-500 py-6 text-xs">No items in cart.</div>
+                        </template>
+                        <template x-for="(item, idx) in cart" :key="idx">
+                            <div class="bg-gray-900/60 p-2 rounded-lg border border-glassBorder flex justify-between items-center text-[11px] gap-2">
+                                <div class="min-w-0 flex-grow">
+                                    <span class="text-white font-bold block truncate" x-text="item.name"></span>
+                                    <span class="text-gray-500 text-[9px]" x-text="item.qty + 'x ₱' + formatCurrency(item.price) + ' (' + item.priceType + ')'"></span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="text-white font-black" x-text="'₱' + formatCurrency(item.total)"></span>
+                                    <button @click="removeFromCart(idx)" class="text-gray-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-glassBorder flex flex-col gap-3">
+                    <div class="flex flex-col gap-2 text-xs">
+                        <div>
+                            <label class="block text-gray-500 text-[9px] uppercase font-bold mb-0.5">Route Delivery Address</label>
+                            <select x-model="checkoutRoute" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-[11px]">
+                                <option value="">Direct Store POS Pickup</option>
+                                <option value="Route 1 - Cagsalaosao City Center">Route 1 - Cagsalaosao</option>
+                                <option value="Route 2 - Calbayog Diversion Road">Route 2 - Calbayog Diversion</option>
+                                <option value="Route 3 - Rawis / Oquendo District">Route 3 - Rawis</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-500 text-[9px] uppercase font-bold mb-0.5">Payment Option</label>
+                            <select x-model="checkoutPaymentMethod" class="w-full glass-input rounded-lg px-2.5 py-1.5 text-[11px]">
+                                <option value="Cash">Cash on Delivery</option>
+                                <option value="GCash">GCash Checkout</option>
+                                <option value="Credit">Store Credit (U-tang)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button @click="submitOrder()" :disabled="cart.length === 0 || isSubmitting" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan text-white font-black py-2.5 rounded-xl text-xs shadow-lg disabled:opacity-40 transition-all">
+                        <i class="fa-solid fa-check mr-1"></i> Submit Wholesale Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Confirmation Modal (Receipt / QR Pay) -->
+    <div x-show="showReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
+        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto">
+            <button @click="showReceipt = false" class="absolute top-4 right-4 text-gray-550 hover:text-white no-print">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            
+            <div class="text-center pb-4 border-b border-glassBorder">
+                <div class="w-12 h-12 bg-accentCyan/10 border border-accentCyan/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-qrcode text-xl text-accentCyan"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Draft Order Generated</h3>
+                <p class="text-xs text-accentCyan mt-0.5">Scan to pay via GCash, or present to Cashier on delivery.</p>
+            </div>
+            
+            <!-- Invoice Details -->
+            <div class="my-5 flex flex-col gap-3 text-xs bg-gray-900/60 p-4 rounded-xl border border-glassBorder font-mono text-left relative">
+                <!-- Transparent Sheyde Watermark Logo -->
+                <div class="receipt-watermark">
+                    <svg viewBox="0 0 240 240" fill="none" stroke-width="2.5" class="w-full h-full">
+                        <!-- Outer Luxury Rings -->
+                        <circle cx="120" cy="120" r="106" stroke-width="1.5" />
+                        <circle cx="120" cy="120" r="99" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round" />
+                        <circle cx="120" cy="120" r="91" stroke-width="1" />
+                        
+                        <!-- Small Elegant Top Star -->
+                        <path d="M120 44 L122.5 50 L128.5 50 L123.7 53.6 L125.5 59.6 L120 56 L114.5 59.6 L116.3 53.6 L111.5 50 L117.5 50 Z" fill="currentColor" stroke="none" />
+                        
+                        <!-- Left and Right Leaf Branches (Laurel Wreath style) -->
+                        <path d="M72 120 C72 142 85 160 102 165" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M72 120 Q66 114 62 122 Q68 128 72 120" fill="currentColor" stroke="none" />
+                        <path d="M73 132 Q65 129 64 138 Q71 140 73 132" fill="currentColor" stroke="none" />
+                        <path d="M77 144 Q69 143 70 152 Q76 151 77 144" fill="currentColor" stroke="none" />
+                        <path d="M85 155 Q78 156 81 164 Q87 160 85 155" fill="currentColor" stroke="none" />
+                        <path d="M168 120 C168 142 155 160 138 165" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M168 120 Q174 114 178 122 Q172 128 168 120" fill="currentColor" stroke="none" />
+                        <path d="M167 132 Q175 129 176 138 Q169 140 167 132" fill="currentColor" stroke="none" />
+                        <path d="M163 144 Q171 143 170 152 Q164 151 163 144" fill="currentColor" stroke="none" />
+                        <path d="M155 155 Q162 156 159 164 Q153 160 155 155" fill="currentColor" stroke="none" />
+
+                        <!-- Premium Custom Monogram "S" (centered) -->
+                        <path d="M96 98 C96 82, 144 82, 144 98 C144 114, 96 116, 96 132 C96 148, 144 148, 144 132" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+                        
+                        <!-- Text Elements -->
+                        <text x="120" y="184" font-family="'Plus Jakarta Sans', 'Outfit', 'Inter', sans-serif" font-size="16" font-weight="950" letter-spacing="6" text-anchor="middle">SHEYDE</text>
+                        <text x="120" y="198" font-family="'Plus Jakarta Sans', 'Outfit', 'Inter', sans-serif" font-size="8" font-weight="700" letter-spacing="4" text-anchor="middle">EST. 2026</text>
+                        <text x="120" y="210" font-family="sans-serif" font-size="8" letter-spacing="8" text-anchor="middle">★★★</text>
+                    </svg>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Order ID:</span>
+                    <span class="text-white font-bold" x-text="receiptData.invoice_no"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Customer Name:</span>
+                    <span class="text-white font-bold" x-text="customerName"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Route Delivery:</span>
+                    <span class="text-white font-bold" x-text="receiptData.route || 'Direct POS'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Payment:</span>
+                    <span class="text-white font-bold" x-text="receiptData.method"></span>
+                </div>
+                <hr class="border-glassBorder">
+                
+                <div class="flex flex-col gap-1.5">
+                    <template x-for="item in receiptData.items" :key="item.product_sku">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400 text-left" x-text="(item.product_name || item.product_sku) + ' x' + item.qty"></span>
+                            <span class="text-white font-bold" x-text="'₱' + formatCurrency(item.total)"></span>
+                        </div>
+                    </template>
+                </div>
+                
+                <hr class="border-glassBorder">
+                <div class="flex justify-between text-sm font-extrabold text-white">
+                    <span>Grand Total:</span>
+                    <span class="text-accentCyan" x-text="'₱' + formatCurrency(receiptData.total)"></span>
+                </div>
+            </div>
+            
+            <!-- Barcode & QR Code Images -->
+            <div class="flex flex-col items-center gap-3 pt-3 border-t border-glassBorder">
+                <div class="bg-white p-3 rounded-lg">
+                    <img :src="'/api/qrcode/' + receiptData.invoice_no + '/'" alt="QR Code Checkout" class="w-32 h-32">
+                </div>
+                <p class="text-[10px] text-gray-550 uppercase tracking-widest font-mono">Invoice Code</p>
+                <div class="w-full">
+                    <img :src="'/api/barcode/' + receiptData.invoice_no + '/'" alt="Barcode Receipt" class="h-14 mx-auto object-contain">
+                </div>
+            </div>
+            
+            <div class="mt-6 flex items-center gap-2">
+                <button @click="showReceipt = false" class="w-full bg-accentBlue hover:bg-accentBlue/80 text-white font-bold text-xs py-2.5 rounded-lg transition-all flex items-center justify-center">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Barcode Scanner Modal -->
+    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
+        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 text-center">
+            <button @click="stopCameraScanner()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            <h3 class="font-extrabold text-sm text-white mb-2">Camera Barcode Scanner</h3>
+            <div id="customer-scanner" class="w-full aspect-video rounded-lg overflow-hidden bg-black border border-glassBorder mb-4"></div>
+            <p class="text-[10px] text-gray-500">Hold the barcode close and steady to scan automatically.</p>
+        </div>
+    </div>
+
+    <!-- GCash Payment Modal -->
+    <div x-show="showPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
+        <div class="glass-card max-w-sm w-full p-6 relative border border-accentBlue/30">
+            <button @click="showPaymentModal = false" class="absolute top-3 right-3 text-gray-500 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-extrabold text-sm text-white mb-2 pb-2 border-b border-glassBorder flex items-center gap-1.5">
+                <i class="fa-solid fa-credit-card text-accentCyan"></i> Submit GCash Payment
+            </h3>
+            
+            <form @submit.prevent="submitCreditPayment()" class="flex flex-col gap-3.5 text-xs text-left">
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1">Amount to Pay (PHP) *</label>
+                    <input type="number" step="0.01" x-model.number="payAmount" required class="w-full glass-input rounded-lg px-3 py-2 text-white font-bold">
+                </div>
+                <div>
+                    <label class="block text-gray-400 font-semibold mb-1">GCash Reference Number *</label>
+                    <input type="text" x-model="payRef" required placeholder="13-digit Reference #" class="w-full glass-input rounded-lg px-3 py-2 text-white font-mono">
+                </div>
+                
+                <button type="submit" class="w-full mt-2 bg-gradient-to-r from-accentBlue to-accentCyan text-white font-black py-2 rounded-xl text-xs shadow-lg shadow-accentBlue/10 transition-all">
+                    Submit GCash Payment (₱<span x-text="formatCurrency(payAmount)"></span>)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Application -->
+    <script>
+        function customerApp() {
+            return {
+                customerId: "{{ customer.id }}",
+                customerName: "{{ customer.name }}",
+                customerContact: "{{ customer.contact|default_if_none:'' }}",
+                customerAddress: "{{ customer.address|default_if_none:'' }}",
+                customerPoints: parseInt("{{ customer.reward_points|default:0 }}"),
+                customerCreditLimit: parseFloat("{{ customer.credit_limit|default:0.00 }}"),
+                customerCreditBalance: parseFloat("{{ customer.credit_balance|default:0.00 }}"),
+                
+                portalTab: 'dashboard',
+                showPaymentModal: false,
+                payAmount: 0,
+                payRef: '',
+                
+                categories: [],
+                brands: [],
+                products: [],
+                sales: [],
+                filteredSales: [],
+                
+                // Storefront ordering
+                cart: [],
+                searchQuery: '',
+                selectedCategory: '',
+                checkoutPaymentMethod: 'Cash',
+                checkoutRoute: '',
+                isSubmitting: false,
+                showReceipt: false,
+                receiptData: {},
+                showScannerModal: false,
+                scannerHtml5: null,
+                showDropdown: false,
+                
+                initCustomer() {
+                    this.loadCustomerState();
+                },
+                
+                async loadCustomerState() {
+                    try {
+                        let res = await fetch('/api/state');
+                        let data = await res.json();
+                        
+                        this.categories = data.categories || [];
+                        this.brands = data.brands || [];
+                        this.sales = data.sales || [];
+                        
+                        // Set up products catalog
+                        this.products = (data.products || []).map(p => {
+                            p.buyQty = 1;
+                            return p;
+                        });
+                        
+                        // Filter sales by customer
+                        this.filteredSales = this.sales.filter(s => s.customer_id == this.customerId);
+                    } catch(e) {
+                        console.error("Error loading customer portal state: ", e);
+                    }
+                },
+                
+                formatCurrency(val) {
+                    return parseFloat(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+                
+                // Storefront Catalog logic
+                filteredProducts() {
+                    return this.products.filter(p => {
+                        let search = this.searchQuery.toLowerCase();
+                        let matchesSearch = p.name.toLowerCase().includes(search) || 
+                                            p.sku.toLowerCase().includes(search);
+                        let matchesCategory = this.selectedCategory === '' || p.category_id == this.selectedCategory;
+                        return matchesSearch && matchesCategory;
+                    });
+                },
+                
+                addToCart(prod, type) {
+                    let price = type === 'wholesale' ? parseFloat(prod.wholesale_price) : parseFloat(prod.retail_price);
+                    let existing = this.cart.find(item => item.sku === prod.sku && item.priceType === type);
+                    
+                    if (existing) {
+                        existing.qty++;
+                        existing.total = existing.qty * existing.price;
+                    } else {
+                        this.cart.push({
+                            sku: prod.sku,
+                            name: prod.name,
+                            price: price,
+                            qty: 1,
+                            priceType: type,
+                            total: price
+                        });
+                    }
+                },
+                
+                removeFromCart(idx) {
+                    this.cart.splice(idx, 1);
+                },
+                
+                cartTotal() {
+                    return this.cart.reduce((sum, item) => sum + item.total, 0);
+                },
+                
+                selectProductFromDropdown(prod) {
+                    this.addToCart(prod, 'retail');
+                    this.searchQuery = '';
+                    this.showDropdown = false;
+                },
+                
+                handleSearchEnter() {
+                    let match = this.products.find(p => p.sku === this.searchQuery.trim() || (p.barcode && p.barcode === this.searchQuery.trim()));
+                    if (match) {
+                        this.addToCart(match, 'retail');
+                        this.searchQuery = '';
+                        this.showDropdown = false;
+                    }
+                },
+                
+                triggerBarcodeScan() {
+                    this.showScannerModal = true;
+                    this.$nextTick(() => {
+                        this.scannerHtml5 = new Html5Qrcode("customer-scanner");
+                        this.scannerHtml5.start(
+                            { facingMode: "environment" },
+                            { fps: 10, qrbox: { width: 250, height: 150 } },
+                            (decodedText) => {
+                                let match = this.products.find(p => p.barcode === decodedText || p.sku === decodedText);
+                                if (match) {
+                                    this.addToCart(match, 'retail');
+                                    this.stopCameraScanner();
+                                }
+                            },
+                            () => {}
+                        ).catch(err => {
+                            console.error(err);
+                        });
+                    });
+                },
+                
+                stopCameraScanner() {
+                    if (this.scannerHtml5) {
+                        this.scannerHtml5.stop().then(() => {
+                            this.scannerHtml5.clear();
+                            this.showScannerModal = false;
+                        }).catch(e => {
+                            this.showScannerModal = false;
+                        });
+                    } else {
+                        this.showScannerModal = false;
+                    }
+                },
+                
+                async submitOrder() {
+                    if (this.cart.length === 0) return;
+                    this.isSubmitting = true;
+                    
+                    let itemsPayload = this.cart.map(item => ({
+                        product_sku: item.sku,
+                        qty: item.qty,
+                        price: item.price,
+                        total: item.total
+                    }));
+                    
+                    let payload = {
+                        action: "create_sale",
+                        invoice_no: "DFT-" + new Date().toISOString().slice(0,10).replace(/-/g,"") + "-" + Math.floor(1000 + Math.random() * 9000),
+                        customer_id: this.customerId,
+                        salesman_id: null,
+                        route: this.checkoutRoute || null,
+                        subtotal: this.cartTotal(),
+                        tax: this.cartTotal() * 0.12,
+                        total: this.cartTotal(),
+                        method: this.checkoutPaymentMethod,
+                        status: "Draft",
+                        items: itemsPayload
+                    };
+                    
+                    try {
+                        let res = await fetch('/api/state', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        let data = await res.json();
+                        if (data.success) {
+                            this.receiptData = {
+                                invoice_no: payload.invoice_no,
+                                route: this.checkoutRoute,
+                                method: this.checkoutPaymentMethod,
+                                total: this.cartTotal(),
+                                items: this.cart.map(i => ({ product_sku: i.sku, name: i.name, qty: i.qty, total: i.total }))
+                            };
+                            this.showReceipt = true;
+                            
+                            this.cart = [];
+                            this.checkoutRoute = '';
+                            this.checkoutPaymentMethod = 'Cash';
+                            this.loadCustomerState();
+                        } else {
+                            alert("Failed to submit order: " + data.error);
+                        }
+                    } catch(e) {
+                        console.error(e);
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+                
+                async submitCreditPayment() {
+                    if (this.payAmount <= 0 || !this.payRef) {
+                        alert("Please enter a valid amount and reference number.");
+                        return;
+                    }
+                    try {
+                        let res = await fetch('/api/state', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: "post_payment",
+                                customer_id: this.customerId,
+                                amount: this.payAmount,
+                                method: "GCash",
+                                reference: this.payRef
+                            })
+                        });
+                        let data = await res.json();
+                        alert("GCash Credit payment submitted successfully!");
+                        this.showPaymentModal = false;
+                        this.payAmount = 0;
+                        this.payRef = '';
+                        this.loadCustomerState();
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
