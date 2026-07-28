@@ -8,6 +8,5 @@ env/
 venv/
 ENV/
 staticfiles/
-*.sqlite3
 .env
 .DS_Store
