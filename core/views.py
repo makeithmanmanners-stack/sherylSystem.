@@ -67,6 +67,7 @@ def get_current_state():
     sales = []
     for s in Sale.objects.order_by('-date'):
         s_data = serialize_model(s)
+        s_data["customer_id"] = s.customer.id if s.customer else None
         s_data["customer_name"] = s.customer.name if s.customer else "Walk-in"
         s_data["salesman_name"] = s.salesman.name if s.salesman else "N/A"
         s_data["items"] = [

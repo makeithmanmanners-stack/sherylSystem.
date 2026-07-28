@@ -269,9 +269,8 @@
                 <!-- Loyalty Member Lookup -->
                 <div class="glass-card p-4 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-user-tag text-accentCyan"></i> Customer Loyalty</span>
+                        <span class="text-xs font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-user-tag text-accentCyan"></i> Customer Accounts</span>
                         <template x-if="posCustomer">
-                            <span class="text-[9px] bg-accentGreen/10 text-accentGreen font-bold px-2 py-0.5 rounded" x-text="posCustomer.reward_points + ' points'"></span>
                         </template>
                     </div>
                     <select x-model="posCustomerId" @change="onPOSCustomerChange()" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
