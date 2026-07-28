@@ -748,6 +748,8 @@
             
             async submitOrder() {
                 if (this.cart.length === 0) return;
+                if (!confirm("Are you sure you want to submit this order?")) return;
+                
                 this.isSubmitting = true;
                 
                 // Generate Invoice No: DRAFT-YYYYMMDD-XXXX

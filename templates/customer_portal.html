@@ -559,7 +559,7 @@
                     </div>
                     
                     <button @click="submitOrder()" :disabled="cart.length === 0 || isSubmitting" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan text-white font-black py-2.5 rounded-xl text-xs shadow-lg disabled:opacity-40 transition-all">
-                        <i class="fa-solid fa-check mr-1"></i> Submit Wholesale Order
+                        <i class="fa-solid fa-check mr-1"></i> Submit Order
                     </button>
                 </div>
             </div>
@@ -862,6 +862,8 @@
                 
                 async submitOrder() {
                     if (this.cart.length === 0) return;
+                    if (!confirm("Are you sure you want to submit this order?")) return;
+                    
                     this.isSubmitting = true;
                     
                     let itemsPayload = this.cart.map(item => ({
