@@ -97,6 +97,13 @@ if os.environ.get('DATABASE_URL') and dj_database_url:
             conn_health_checks=True,
         )
     }
+elif os.environ.get('RENDER'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 else:
     DB_NAME = os.environ.get('DB_NAME', 'sarisari_erp')
     DB_USER = os.environ.get('DB_USER', 'root')
@@ -118,6 +125,7 @@ else:
             }
         }
     }
+
 
 
 # Password validation

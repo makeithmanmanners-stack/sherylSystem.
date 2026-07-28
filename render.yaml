@@ -2,6 +2,7 @@ services:
   - type: web
     name: sheryl-system
     runtime: python
+    region: singapore
     buildCommand: "chmod +x build.sh && ./build.sh"
     startCommand: "gunicorn store_erp.wsgi:application"
     plan: free
@@ -18,6 +19,7 @@ services:
 databases:
   - name: sheryl-system-db
     plan: free
+    region: singapore
     databaseName: sarisari_erp
     user: sheryl_user
     ipAllowList: []
