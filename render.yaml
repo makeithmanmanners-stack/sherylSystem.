@@ -2,7 +2,7 @@ services:
   - type: web
     name: sheryl-system
     runtime: python
-    buildCommand: "./build.sh"
+    buildCommand: "chmod +x build.sh && ./build.sh"
     startCommand: "gunicorn store_erp.wsgi:application"
     plan: free
     envVars:
@@ -12,11 +12,12 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: WEB_CONCURRENCY
-        value: "4"
+      - key: PYTHON_VERSION
+        value: 3.11.9
 
 databases:
   - name: sheryl-system-db
     plan: free
     databaseName: sarisari_erp
     user: sheryl_user
+    ipAllowList: []
