@@ -6,3 +6,5 @@ pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
 python manage.py migrate
+
+python -c "import os; import django; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'store_erp.settings'); django.setup(); from django.contrib.auth.models import User; User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')"
