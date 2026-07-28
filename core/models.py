@@ -42,7 +42,7 @@ class Product(models.Model):
     qr_code = models.TextField(blank=True, null=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
     expiration_date = models.DateField(blank=True, null=True)
-    image_url = models.ImageField(upload_to='products/', blank=True, null=True, max_length=500)
+    image_url = models.ImageField(upload_to='products/', blank=True, null=True, max_length=500, verbose_name="Attach files")
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
