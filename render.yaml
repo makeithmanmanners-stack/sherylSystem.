@@ -3,6 +3,8 @@ services:
     name: sheryl-system-app
     runtime: python
     region: singapore
+    branch: main
+    autoDeploy: true
     buildCommand: "chmod +x build.sh && ./build.sh"
     startCommand: "gunicorn store_erp.wsgi:application --bind 0.0.0.0:$PORT"
     plan: free
