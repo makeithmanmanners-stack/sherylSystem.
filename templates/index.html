@@ -1591,6 +1591,9 @@
             
             initAdmin() {
                 this.loadAdminState();
+                // Auto-sync products and data from Django Admin / DB when window gains focus or every 10 seconds
+                window.addEventListener('focus', () => this.loadAdminState());
+                setInterval(() => this.loadAdminState(), 10000);
             },
             
             async loadAdminState() {
@@ -1748,8 +1751,10 @@
             
             filteredInventoryProducts() {
                 return this.products.filter(p => {
-                    let matchesSearch = p.name.toLowerCase().includes(this.inventorySearch.toLowerCase()) || 
-                                        p.sku.toLowerCase().includes(this.inventorySearch.toLowerCase());
+                    let nameStr = (p.name || '').toLowerCase();
+                    let skuStr = (p.sku || '').toLowerCase();
+                    let searchStr = (this.inventorySearch || '').toLowerCase();
+                    let matchesSearch = nameStr.includes(searchStr) || skuStr.includes(searchStr);
                     let matchesCategory = !this.inventoryCategoryFilter || p.category == this.inventoryCategoryFilter;
                     return matchesSearch && matchesCategory;
                 });
@@ -2750,7 +2755,9 @@
             },
             
             formatCurrency(val) {
-                return parseFloat(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                let num = parseFloat(val);
+                if (isNaN(num)) num = 0;
+                return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
         };
     }

@@ -697,6 +697,9 @@
             
             initStore() {
                 this.loadState();
+                // Auto-sync catalog and data from DB when window gains focus or every 10 seconds
+                window.addEventListener('focus', () => this.loadState());
+                setInterval(() => this.loadState(), 10000);
             },
             
             async loadState() {
@@ -720,8 +723,10 @@
             
             filteredProducts() {
                 return this.products.filter(p => {
-                    let matchesSearch = p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                                        p.sku.toLowerCase().includes(this.searchQuery.toLowerCase());
+                    let nameStr = (p.name || '').toLowerCase();
+                    let skuStr = (p.sku || '').toLowerCase();
+                    let searchStr = (this.searchQuery || '').toLowerCase();
+                    let matchesSearch = nameStr.includes(searchStr) || skuStr.includes(searchStr);
                     let matchesCategory = this.selectedCategory === '' || p.category === this.selectedCategory;
                     let matchesBrand = this.selectedBrand === '' || p.brand === parseInt(this.selectedBrand);
                     return matchesSearch && matchesCategory && matchesBrand;
@@ -1181,7 +1186,9 @@
             },
             
             formatCurrency(val) {
-                return parseFloat(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                let num = parseFloat(val);
+                if (isNaN(num)) num = 0;
+                return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
         };
     }
