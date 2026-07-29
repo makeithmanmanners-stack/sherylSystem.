@@ -47,11 +47,11 @@ coke_bottlers = Supplier.objects.create(
     tin="000-111-222-000",
     outstanding_balance=45000.00
 )
-smb_distributor = Supplier.objects.create(
+smb_supplier = Supplier.objects.create(
     name="San Miguel Brewery Inc.",
     company_name="San Miguel Corporation",
     phone="02-8632-3000",
-    email="distributors@smb.sanmiguel.com.ph",
+    email="sales@smb.sanmiguel.com.ph",
     address="Ortigas Center, Pasig City",
     tin="111-222-333-000",
     outstanding_balance=125000.00
@@ -112,7 +112,7 @@ products_data = [
         "min_stock": 15,
         "max_stock": 200,
         "barcode": "4800011223301",
-        "supplier": smb_distributor,
+        "supplier": smb_supplier,
         "expiration_date": date.today() + timedelta(days=365),
         "image_url": "https://images.unsplash.com/photo-1566633806327-68e152aaf26d?auto=format&fit=crop&w=600&q=80"
     },
@@ -128,7 +128,7 @@ products_data = [
         "min_stock": 15,
         "max_stock": 150,
         "barcode": "4800011223302",
-        "supplier": smb_distributor,
+        "supplier": smb_supplier,
         "expiration_date": date.today() + timedelta(days=365),
         "image_url": "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?auto=format&fit=crop&w=600&q=80"
     },
@@ -202,7 +202,7 @@ Customer.objects.create(
 salesman = Employee.objects.create(name="Juan Dela Cruz", role="Salesman", phone="09331112222", base_salary=15000.00, status="Active")
 driver = Employee.objects.create(name="Pedro Penduko", role="Driver", phone="09332223333", base_salary=12000.00, status="Active")
 helper = Employee.objects.create(name="Cardo Dalisay", role="Helper", phone="09333334444", base_salary=10000.00, status="Active")
-admin = Employee.objects.create(name="Sheryl Vasquez", role="Admin", phone="09175558888", base_salary=30000.00, status="Active")
+admin = Employee.objects.create(name="Sheyde Vasquez", role="Admin", phone="09175558888", base_salary=30000.00, status="Active")
 
 # 7. Audit Trail
 AuditLog.objects.create(user="system", action="Database Seeding", module="System Setup", details="Successfully populated system tables with initial demonstration records.")

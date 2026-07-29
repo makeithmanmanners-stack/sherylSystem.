@@ -345,7 +345,7 @@ INSERT INTO `core_employee` (`id`, `name`, `role`, `phone`, `base_salary`, `over
 (17, 'Juan Dela Cruz', 'Salesman', '09331112222', 15000.00, 0.00, 0.00, 0.00, 'Active', 3),
 (18, 'Pedro Penduko', 'Driver', '09332223333', 12000.00, 0.00, 0.00, 0.00, 'Active', 4),
 (19, 'Cardo Dalisay', 'Helper', '09333334444', 10000.00, 0.00, 0.00, 0.00, 'Active', NULL),
-(20, 'Sheryl Vasquez', 'Admin', '09175558888', 30000.00, 0.00, 0.00, 0.00, 'Active', 1),
+(20, 'Sheyde Vasquez', 'Admin', '09175558888', 30000.00, 0.00, 0.00, 0.00, 'Active', 1),
 (21, 'Maria Clara', 'Cashier', NULL, 15000.00, 0.00, 0.00, 0.00, 'Active', 2);
 
 -- --------------------------------------------------------
@@ -551,7 +551,7 @@ CREATE TABLE `core_supplier` (
 
 INSERT INTO `core_supplier` (`id`, `name`, `company_name`, `phone`, `email`, `address`, `tin`, `outstanding_balance`) VALUES
 (13, 'Coca-Cola Beverages PH', 'Coca-Cola Bottlers Philippines Inc.', '02-8866-2653', 'orders@coca-cola.com.ph', 'Manila Gateway, Taguig, Metro Manila', '000-111-222-000', 45000.00),
-(14, 'San Miguel Brewery Inc.', 'San Miguel Corporation', '02-8632-3000', 'distributors@smb.sanmiguel.com.ph', 'Ortigas Center, Pasig City', '111-222-333-000', 125000.00),
+(14, 'San Miguel Brewery Inc.', 'San Miguel Corporation', '02-8632-3000', 'sales@smb.sanmiguel.com.ph', 'Ortigas Center, Pasig City', '111-222-333-000', 125000.00),
 (15, 'Monde Nissin Corp', 'Monde Nissin Corporation', '02-8588-9100', 'sales@mondenissin.com', 'Sta. Rosa, Laguna', '222-333-444-000', 0.00);
 
 -- --------------------------------------------------------
