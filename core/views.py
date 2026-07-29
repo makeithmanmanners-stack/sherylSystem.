@@ -692,7 +692,7 @@ def export_excel(request):
     return response
 
 def export_pdf(request):
-    # PDF generation for sales receipts or reports using ReportLab
+    # PDF generation for sales receipts, inventory, or summary reports using ReportLab
     report_type = request.GET.get('type', 'sales')
     invoice_no = request.GET.get('invoice_no')
     
@@ -704,7 +704,7 @@ def export_pdf(request):
     title_style = ParagraphStyle(
         'TitleStyle',
         parent=styles['Heading1'],
-        fontSize=20,
+        fontSize=18,
         textColor=colors.HexColor('#0F172A'),
         spaceAfter=15
     )
@@ -716,8 +716,8 @@ def export_pdf(request):
         if not sale:
             return HttpResponse("Invoice not found", status=404)
         
-        story.append(Paragraph(f"SHERYL SARI-SARI STORE & ERP SYSTEM", title_style))
-        story.append(Paragraph(f"Official Sales Invoice / Receipt", styles['Heading2']))
+        story.append(Paragraph("SHEYDE SARI-SARI STORE & ERP SYSTEM", title_style))
+        story.append(Paragraph("Official Sales Invoice / Receipt", styles['Heading2']))
         story.append(Spacer(1, 10))
         story.append(Paragraph(f"Invoice No: <b>{sale.invoice_no}</b>", normal_style))
         story.append(Paragraph(f"Date: {sale.date.strftime('%Y-%m-%d %H:%M')}", normal_style))
@@ -752,11 +752,49 @@ def export_pdf(request):
         story.append(Spacer(1, 20))
         story.append(Paragraph(f"Payment Method: <b>{sale.method}</b> | Status: <b>{sale.status}</b>", normal_style))
         story.append(Spacer(1, 40))
-        story.append(Paragraph("Thank you for your patronage! Reconciled & Powered by Django ERP", normal_style))
+        story.append(Paragraph("Thank you for your patronage! Reconciled & Powered by Sheyde ERP", normal_style))
+
+    elif report_type == 'inventory':
+        # Inventory Stock Master Report
+        story.append(Paragraph("SHEYDE ENTERPRISE - Inventory Stock Master Report", title_style))
+        story.append(Paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
+        story.append(Spacer(1, 15))
         
+        data = [["SKU", "Product Name", "Category", "Cost (₱)", "Wholesale (₱)", "Retail (₱)", "Stock", "Status"]]
+        for p in Product.objects.all():
+            status = "In Stock"
+            if p.stock_quantity == 0:
+                status = "Out of Stock"
+            elif p.stock_quantity <= p.min_stock:
+                status = "Low Stock"
+                
+            data.append([
+                p.sku,
+                p.name[:22],
+                p.category.name[:14] if p.category else "General",
+                f"{float(p.cost_price):.2f}",
+                f"{float(p.wholesale_price):.2f}",
+                f"{float(p.retail_price):.2f}",
+                str(p.stock_quantity),
+                status
+            ])
+            
+        table = Table(data, colWidths=[65, 130, 80, 55, 65, 60, 40, 65])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+        story.append(Paragraph("Official Sheyde Enterprise Stock Level Audit Report", normal_style))
+
     else:
         # General Sales Summary
-        story.append(Paragraph(f"Sales Summary Statement Report", title_style))
+        story.append(Paragraph("SHEYDE ENTERPRISE - Sales Summary Statement Report", title_style))
         story.append(Paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
         story.append(Spacer(1, 15))
         
@@ -788,7 +826,7 @@ def export_pdf(request):
     buffer.close()
     
     response = HttpResponse(content_type="application/pdf")
-    filename = f"report_{datetime.now().strftime('%Y%m%d%H%M')}.pdf"
+    filename = f"{report_type}_report_{datetime.now().strftime('%Y%m%d%H%M')}.pdf"
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     response.write(pdf)
     return response

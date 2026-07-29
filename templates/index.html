@@ -38,6 +38,38 @@
                 <span class="bg-accentBlue/20 text-accentBlue px-2 py-0.5 rounded font-extrabold" x-text="pendingDraftsCount()"></span>
             </div>
         </div>
+
+        <!-- Bluetooth Thermal Printer Sidebar Widget -->
+        <div class="bg-gray-900/60 p-3 rounded-2xl border border-glassBorder text-xs flex flex-col gap-2">
+            <div class="flex items-center justify-between text-accentBlue">
+                <div class="flex items-center gap-1.5 font-bold uppercase text-[10px] tracking-wide">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Thermal Printer</span>
+                </div>
+                <span :class="btPrinterConnected ? 'bg-accentGreen/20 text-accentGreen border-accentGreen/30' : 'bg-gray-800 text-gray-400 border-glassBorder'" class="px-1.5 py-0.5 rounded border text-[9px] font-extrabold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="btPrinterConnected ? 'bg-accentGreen animate-pulse' : 'bg-gray-500'"></span>
+                    <span x-text="btPrinterConnected ? 'CONNECTED' : 'OFFLINE'"></span>
+                </span>
+            </div>
+            <div class="text-[10px] text-gray-400 truncate font-mono" x-text="btPrinterConnected ? btPrinterName : 'No printer paired'"></div>
+            <div class="flex gap-1.5 mt-0.5">
+                <template x-if="!btPrinterConnected">
+                    <button @click="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all shadow-sm">
+                        <i class="fa-solid fa-bluetooth"></i> Connect Bluetooth
+                    </button>
+                </template>
+                <template x-if="btPrinterConnected">
+                    <div class="grid grid-cols-2 gap-1.5 w-full">
+                        <button @click="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 text-accentCyan font-bold py-1 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors">
+                            <i class="fa-solid fa-vial"></i> Test Print
+                        </button>
+                        <button @click="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 text-red-300 font-bold py-1 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors">
+                            <i class="fa-solid fa-power-off"></i> Off
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
     </aside>
 
     <!-- Main Workspace Content -->
@@ -880,13 +912,24 @@
                     <h3 class="font-extrabold text-base text-white">Inventory & Supplier Purchasing</h3>
                     <p class="text-xs text-gray-500 mt-0.5">Manage products catalog, monitor stock levels, and issue purchase orders to suppliers.</p>
                 </div>
-                <div class="flex gap-2">
-                    <button @click="subTab = 'stock'" :class="subTab === 'stock' ? 'bg-accentBlue text-white shadow-md shadow-accentBlue/10' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">
-                        Stock Master
-                    </button>
-                    <button @click="subTab = 'pos'" :class="subTab === 'pos' ? 'bg-accentBlue text-white shadow-md shadow-accentBlue/10' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
-                        Purchase Orders
-                    </button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex gap-1.5 bg-gray-950/40 p-1 rounded-xl border border-glassBorder">
+                        <button @click="subTab = 'stock'" :class="subTab === 'stock' ? 'bg-accentBlue text-white shadow-md shadow-accentBlue/10' : 'text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                            Stock Master
+                        </button>
+                        <button @click="subTab = 'pos'" :class="subTab === 'pos' ? 'bg-accentBlue text-white shadow-md shadow-accentBlue/10' : 'text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                            Purchase Orders
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <a href="/api/export/excel/?type=inventory" target="_blank" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-excel text-emerald-400"></i> Export Excel
+                        </a>
+                        <a href="/api/export/pdf/?type=inventory" target="_blank" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-pdf text-rose-400"></i> Export PDF
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -2151,7 +2194,7 @@
                     data.push(...encoder.encode("SHEYDE SARI-SARI\n"));
                     data.push(...normalSize);
                     data.push(...encoder.encode("Calbayog City, Samar\n"));
-                    data.push(...encoder.encode("Sheryl: 09973803250\n"));
+                    data.push(...encoder.encode("Sheyde: 09973803250\n"));
                     data.push(...encoder.encode("Deo: 09169104900\n"));
                     data.push(...encoder.encode("--------------------------------\n"));
                     data.push(...left);
@@ -2190,7 +2233,7 @@
                     data.push(...encoder.encode("SHEYDE SARI-SARI\n"));
                     data.push(...normalSize);
                     data.push(...encoder.encode("Calbayog City, Samar\n"));
-                    data.push(...encoder.encode("Sheryl: 09973803250\n"));
+                    data.push(...encoder.encode("Sheyde: 09973803250\n"));
                     data.push(...encoder.encode("Deo: 09169104900\n"));
                     data.push(...encoder.encode("--------------------------------\n"));
                     
