@@ -7,7 +7,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Update Employees
-        emp_count = Employee.objects.filter(name__icontains='Sheryl').update(name='Sheyde Vasquez')
+        emp_count = 0
+        for emp in Employee.objects.all():
+            if 'sheryl' in emp.name.lower():
+                emp.name = emp.name.replace('Sheryl', 'Sheyde').replace('sheryl', 'sheyde')
+                emp.save()
+                emp_count += 1
         
         # Update Users
         user_count = 0
@@ -26,6 +31,14 @@ class Command(BaseCommand):
                 user.save()
                 user_count += 1
 
+        # Update Customers
+        cust_count = 0
+        for cust in Customer.objects.all():
+            if 'sheryl' in cust.name.lower():
+                cust.name = cust.name.replace('Sheryl', 'Sheyde').replace('sheryl', 'sheyde')
+                cust.save()
+                cust_count += 1
+
         # Update Suppliers
         sup_count = 0
         for sup in Supplier.objects.all():
@@ -38,8 +51,11 @@ class Command(BaseCommand):
                 if sup.company_name:
                     sup.company_name = sup.company_name.replace('Distributor', 'Supplier').replace('distributor', 'supplier')
                 changed = True
+            if 'sheryl' in sup.name.lower():
+                sup.name = sup.name.replace('Sheryl', 'Sheyde').replace('sheryl', 'sheyde')
+                changed = True
             if changed:
                 sup.save()
                 sup_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f'Branding update complete. Employees updated: {emp_count}, Users updated: {user_count}, Suppliers updated: {sup_count}.'))
+        self.stdout.write(self.style.SUCCESS(f'Branding update complete. Employees: {emp_count}, Users: {user_count}, Customers: {cust_count}, Suppliers: {sup_count}.'))
