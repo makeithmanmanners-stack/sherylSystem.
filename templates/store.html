@@ -1013,15 +1013,15 @@
                     
                     if (receipt.items && receipt.items.length) {
                         receipt.items.forEach(item => {
-                            let nameStr = (item.name || item.product_name || 'Item').substring(0, 20);
-                            let priceStr = `₱${parseFloat(item.price || 0).toFixed(2)}`;
-                            let totalStr = `₱${parseFloat(item.total || 0).toFixed(2)}`;
+                            let nameStr = (item.name || item.product_name || 'Item').substring(0, 30);
+                            let priceStr = `PHP ${parseFloat(item.price || 0).toFixed(2)}`;
+                            let totalStr = `PHP ${parseFloat(item.total || 0).toFixed(2)}`;
                             data.push(...encoder.encode(`${nameStr}\n`));
                             data.push(...encoder.encode(`  ${item.qty} x ${priceStr} = ${totalStr}\n`));
                         });
                     }
                     data.push(...encoder.encode("--------------------------------\n"));
-                    data.push(...encoder.encode(`TOTAL: ₱${parseFloat(receipt.total || 0).toFixed(2)}\n`));
+                    data.push(...encoder.encode(`TOTAL: PHP ${parseFloat(receipt.total || 0).toFixed(2)}\n`));
                     data.push(...encoder.encode(`Method: ${receipt.method || 'Cash'}\n`));
                     data.push(...encoder.encode("================================\n"));
                     data.push(...center);

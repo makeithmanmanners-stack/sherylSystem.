@@ -2219,10 +2219,31 @@
             },
             
             async printBluetoothReceipt(receipt) {
-                if (!this.btPrinterConnected || !this.btCharacteristic) return;
+                if (!this.btPrinterConnected || !this.btCharacteristic) {
+                    alert("Please connect your Bluetooth thermal printer first using the 'Connect Bluetooth Thermal Printer' button.");
+                    return;
+                }
+                
+                // Fallback to active cart or last receipt if missing
+                if (!receipt || (!receipt.items || receipt.items.length === 0)) {
+                    if (this.posCart && this.posCart.length > 0) {
+                        receipt = {
+                            invoice_no: 'INV-' + Date.now().toString().slice(-6),
+                            customer_name: this.posCustomer ? this.posCustomer.name : 'Walk-in Customer',
+                            method: this.paymentMethod || 'Cash',
+                            total: this.posCartTotal(),
+                            items: JSON.parse(JSON.stringify(this.posCart)),
+                            paymentCash: this.paymentCash,
+                            paymentEWallet: this.paymentEWallet
+                        };
+                    } else if (this.lastPOSReceipt) {
+                        receipt = this.lastPOSReceipt;
+                    }
+                }
+                
                 try {
                     const encoder = new TextEncoder();
-                    const init = new Uint8Array([0x1b, 0x40]);
+                    const init = new Uint8Array([0x1b, 0x40, 0x1b, 0x74, 0x00]); // Reset & ASCII Code Table 0
                     const center = new Uint8Array([0x1b, 0x61, 0x01]);
                     const left = new Uint8Array([0x1b, 0x61, 0x00]);
                     const right = new Uint8Array([0x1b, 0x61, 0x02]);
@@ -2233,63 +2254,67 @@
                     let data = [];
                     data.push(...init);
                     
-                    // Header
+                    // Store Header
                     data.push(...center, ...doubleSize);
-                    data.push(...encoder.encode("SHEYDE SARI-SARI\n"));
+                    data.push(...encoder.encode("SHEYDE ENTERPRISE\n"));
                     data.push(...normalSize);
                     data.push(...encoder.encode("Calbayog City, Samar\n"));
-                    data.push(...encoder.encode("Sheyde: 09973803250\n"));
-                    data.push(...encoder.encode("Deo: 09169104900\n"));
-                    data.push(...encoder.encode("--------------------------------\n"));
+                    data.push(...encoder.encode("Contact: 09973803250 / 09169104900\n"));
+                    data.push(...encoder.encode("================================\n"));
                     
-                    // Metadata
+                    // Transaction Metadata
                     data.push(...left);
-                    data.push(...encoder.encode(`Inv: ${receipt.invoice_no}\n`));
-                    data.push(...encoder.encode(`Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`));
-                    data.push(...encoder.encode(`Cust: ${receipt.customer_name}\n`));
-                    data.push(...encoder.encode(`Pay: ${receipt.method}\n`));
+                    data.push(...encoder.encode(`Invoice:  ${receipt.invoice_no || 'POS-' + Date.now().toString().slice(-6)}\n`));
+                    data.push(...encoder.encode(`Date:     ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`));
+                    data.push(...encoder.encode(`Customer: ${receipt.customer_name || 'Walk-in Customer'}\n`));
+                    data.push(...encoder.encode(`Payment:  ${receipt.method || 'Cash'}\n`));
                     data.push(...encoder.encode("--------------------------------\n"));
                     
-                    // Table Header
-                    data.push(...encoder.encode("Item         Qty   Price   Total\n"));
+                    // Line Items (2-line clean format for 58mm/80mm ESC/POS thermal printers)
+                    let items = (receipt && receipt.items && receipt.items.length) ? receipt.items : [];
+                    if (items.length > 0) {
+                        items.forEach((item, index) => {
+                            let itemName = (item.name || item.product_name || `Item ${index + 1}`).substring(0, 30);
+                            let qty = item.qty || item.quantity || 1;
+                            let price = parseFloat(item.price || item.unit_price || 0).toFixed(2);
+                            let total = parseFloat(item.total || (qty * price) || 0).toFixed(2);
+                            
+                            // Line 1: Item Name
+                            data.push(...encoder.encode(`${itemName}\n`));
+                            // Line 2: Qty x Unit Price = Total Price
+                            data.push(...encoder.encode(`  ${qty} x PHP ${price} = PHP ${total}\n`));
+                        });
+                    } else {
+                        data.push(...encoder.encode("  No items recorded\n"));
+                    }
+                    
                     data.push(...encoder.encode("--------------------------------\n"));
                     
-                    // Table Items
-                    receipt.items.forEach(item => {
-                        let name = item.name.substring(0, 12).padEnd(12, ' ');
-                        let qty = String(item.qty).padStart(3, ' ');
-                        let price = String(parseFloat(item.price).toFixed(2)).padStart(7, ' ');
-                        let total = String(parseFloat(item.total).toFixed(2)).padStart(7, ' ');
-                        data.push(...encoder.encode(`${name} ${qty} ${price} ${total}\n`));
-                    });
-                    
-                    data.push(...encoder.encode("--------------------------------\n"));
-                    
-                    // Totals
+                    // Financial Summary
+                    let grandTotal = parseFloat(receipt.total || 0).toFixed(2);
                     data.push(...right);
-                    data.push(...encoder.encode(`Grand Total: PHP ${parseFloat(receipt.total).toFixed(2)}\n`));
+                    data.push(...encoder.encode(`GRAND TOTAL: PHP ${grandTotal}\n`));
                     
-                    if (receipt.method.includes('Cash') && receipt.paymentCash) {
-                        data.push(...encoder.encode(`Cash Paid:   PHP ${parseFloat(receipt.paymentCash).toFixed(2)}\n`));
-                        let change = receipt.paymentCash - receipt.total;
+                    if (receipt.paymentCash && parseFloat(receipt.paymentCash) > 0) {
+                        let cashPaid = parseFloat(receipt.paymentCash).toFixed(2);
+                        data.push(...encoder.encode(`Cash Paid:   PHP ${cashPaid}\n`));
+                        let change = parseFloat(receipt.paymentCash) - parseFloat(receipt.total || 0);
                         if (change > 0) {
                             data.push(...encoder.encode(`Change:      PHP ${change.toFixed(2)}\n`));
                         }
-                    } else if (receipt.method.includes('Split')) {
-                        if (receipt.paymentCash) {
-                            data.push(...encoder.encode(`Cash Component: PHP ${parseFloat(receipt.paymentCash).toFixed(2)}\n`));
-                        }
-                        if (receipt.paymentEWallet) {
-                            data.push(...encoder.encode(`E-Wallet Comp:  PHP ${parseFloat(receipt.paymentEWallet).toFixed(2)}\n`));
-                        }
+                    }
+                    if (receipt.paymentEWallet && parseFloat(receipt.paymentEWallet) > 0) {
+                        data.push(...encoder.encode(`E-Wallet:    PHP ${parseFloat(receipt.paymentEWallet).toFixed(2)}\n`));
                     }
                     
-                    // Footer
+                    // Footer Feed
                     data.push(...center);
-                    data.push(...encoder.encode("\nThank you for shopping!\n"));
+                    data.push(...encoder.encode("\nThank you for your business!\n"));
+                    data.push(...encoder.encode("SHEYDE Wholesale & Retail\n"));
                     data.push(...feed);
                     
                     await this.writeToPrinter(new Uint8Array(data));
+                    alert("Receipt printed successfully to Bluetooth thermal printer!");
                 } catch(e) {
                     console.error("BT Receipt print failed: ", e);
                     alert("BT printing failed: " + e.message);
