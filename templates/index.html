@@ -2094,10 +2094,62 @@
                 }
             },
             
-            // Web Bluetooth printer connection methods
+            // Web Bluetooth printer connection & auto-connect methods
+            async autoConnectBluetoothPrinter() {
+                if (this.btPrinterConnected && this.btCharacteristic && this.btDevice && this.btDevice.gatt && this.btDevice.gatt.connected) {
+                    return true;
+                }
+                if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+                    try {
+                        const devices = await navigator.bluetooth.getDevices();
+                        if (devices && devices.length > 0) {
+                            const device = devices[0];
+                            console.log("Auto-connecting to remembered Bluetooth printer:", device.name);
+                            const server = await device.gatt.connect();
+                            
+                            const optionalServices = [
+                                "000018f0-0000-1000-8000-00805f9b34fb",
+                                "0000e7e1-0000-1000-8000-00805f9b34fb",
+                                "00004953-5343-fe5d-4b5c-8735163f435a",
+                                "00001101-0000-1000-8000-00805f9b34fb"
+                            ];
+                            let characteristic = null;
+                            for (const uuid of optionalServices) {
+                                try {
+                                    const service = await server.getPrimaryService(uuid);
+                                    const characteristics = await service.getCharacteristics();
+                                    characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+                                    if (characteristic) break;
+                                } catch(err) {}
+                            }
+                            if (!characteristic) {
+                                try {
+                                    const services = await server.getPrimaryServices();
+                                    for (const service of services) {
+                                        const characteristics = await service.getCharacteristics();
+                                        characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+                                        if (characteristic) break;
+                                    }
+                                } catch(e) {}
+                            }
+                            if (characteristic) {
+                                this.btDevice = device;
+                                this.btCharacteristic = characteristic;
+                                this.btPrinterConnected = true;
+                                this.btPrinterName = device.name || "Bluetooth Printer";
+                                console.log("Auto-connected to Bluetooth printer:", this.btPrinterName);
+                                return true;
+                            }
+                        }
+                    } catch(e) {
+                        console.log("Auto-connect failed: ", e);
+                    }
+                }
+                return false;
+            },
+
             async connectBluetoothPrinter() {
                 try {
-                    // BLE receipt printers advertise these serial service UUIDs
                     const optionalServices = [
                         "000018f0-0000-1000-8000-00805f9b34fb",
                         "0000e7e1-0000-1000-8000-00805f9b34fb",
@@ -2105,7 +2157,6 @@
                         "00001101-0000-1000-8000-00805f9b34fb"
                     ];
                     
-                    // Request user to select a Bluetooth device
                     const device = await navigator.bluetooth.requestDevice({
                         acceptAllDevices: true,
                         optionalServices: optionalServices
@@ -2115,19 +2166,15 @@
                     const server = await device.gatt.connect();
                     
                     let characteristic = null;
-                    // Discover service and write characteristic
                     for (const uuid of optionalServices) {
                         try {
                             const service = await server.getPrimaryService(uuid);
                             const characteristics = await service.getCharacteristics();
                             characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
                             if (characteristic) break;
-                        } catch(err) {
-                            console.log(`Primary service ${uuid} not found/accessible:`, err);
-                        }
+                        } catch(err) {}
                     }
                     
-                    // Fallback to query all services if primary service mapping failed
                     if (!characteristic) {
                         try {
                             const services = await server.getPrimaryServices();
@@ -2136,9 +2183,7 @@
                                 characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
                                 if (characteristic) break;
                             }
-                        } catch(e) {
-                            console.log("Fallback dynamic services query failed: ", e);
-                        }
+                        } catch(e) {}
                     }
                     
                     if (characteristic) {
@@ -2171,47 +2216,63 @@
             
             async writeToPrinter(bytes) {
                 if (!this.btCharacteristic) return;
-                const chunkSize = 20; // Chunking to fit standard BLE MTU limitations
+                const chunkSize = 20; // BLE MTU chunking
                 for (let i = 0; i < bytes.length; i += chunkSize) {
                     const chunk = bytes.slice(i, i + chunkSize);
-                    await this.btCharacteristic.writeValue(chunk);
-                    await new Promise(r => setTimeout(r, 15)); // Delay to allow device buffering
+                    try {
+                        if (this.btCharacteristic.properties.writeWithoutResponse) {
+                            await this.btCharacteristic.writeValueWithoutResponse(chunk);
+                        } else if (this.btCharacteristic.properties.write) {
+                            await this.btCharacteristic.writeValueWithResponse(chunk);
+                        } else {
+                            await this.btCharacteristic.writeValue(chunk);
+                        }
+                    } catch(err) {
+                        try {
+                            await this.btCharacteristic.writeValueWithoutResponse(chunk);
+                        } catch(e2) {
+                            await this.btCharacteristic.writeValue(chunk);
+                        }
+                    }
+                    await new Promise(r => setTimeout(r, 20));
                 }
             },
             
             async printBluetoothTestPage() {
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    alert("No Bluetooth printer connected.");
-                    return;
+                    let reconnected = await this.autoConnectBluetoothPrinter();
+                    if (!reconnected) {
+                        await this.connectBluetoothPrinter();
+                    }
                 }
                 try {
                     const encoder = new TextEncoder();
-                    const init = new Uint8Array([0x1b, 0x40]);
+                    const init = new Uint8Array([0x1b, 0x40, 0x1b, 0x74, 0x00]);
                     const center = new Uint8Array([0x1b, 0x61, 0x01]);
                     const left = new Uint8Array([0x1b, 0x61, 0x00]);
                     const doubleSize = new Uint8Array([0x1d, 0x21, 0x11]);
                     const normalSize = new Uint8Array([0x1d, 0x21, 0x00]);
-                    const feed = new Uint8Array([0x0a, 0x0a, 0x0a, 0x0a]);
+                    const feed = new Uint8Array([0x1b, 0x64, 0x05, 0x0d, 0x0a, 0x0d, 0x0a]);
 
                     let data = [];
                     data.push(...init);
                     data.push(...center, ...doubleSize);
-                    data.push(...encoder.encode("SHEYDE SARI-SARI\n"));
+                    data.push(...encoder.encode("SHEYDE ENTERPRISE\r\n"));
                     data.push(...normalSize);
-                    data.push(...encoder.encode("Calbayog City, Samar\n"));
-                    data.push(...encoder.encode("Sheyde: 09973803250\n"));
-                    data.push(...encoder.encode("Deo: 09169104900\n"));
-                    data.push(...encoder.encode("--------------------------------\n"));
+                    data.push(...encoder.encode("Calbayog City, Samar\r\n"));
+                    data.push(...encoder.encode("Contact: 09973803250\r\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
                     data.push(...left);
-                    data.push(...encoder.encode("Status: Connected OK\n"));
-                    data.push(...encoder.encode(`Time: ${new Date().toLocaleTimeString()}\n`));
-                    data.push(...encoder.encode("System: Web BLE ESC/POS\n"));
-                    data.push(...encoder.encode("--------------------------------\n"));
+                    data.push(...encoder.encode("Status: Connected OK\r\n"));
+                    data.push(...encoder.encode(`Time: ${new Date().toLocaleTimeString()}\r\n`));
+                    data.push(...encoder.encode("System: BLE ESC/POS Thermal\r\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
                     data.push(...center);
-                    data.push(...encoder.encode("THANK YOU!\n"));
+                    data.push(...encoder.encode("PRINTER TEST SUCCESS!\r\n"));
                     data.push(...feed);
 
                     await this.writeToPrinter(new Uint8Array(data));
+                    alert("Test page printed successfully!");
                 } catch(e) {
                     console.error("Test print failed: ", e);
                     alert("Printing failed: " + e.message);
@@ -2220,8 +2281,10 @@
             
             async printBluetoothReceipt(receipt) {
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    alert("Please connect your Bluetooth thermal printer first using the 'Connect Bluetooth Thermal Printer' button.");
-                    return;
+                    let reconnected = await this.autoConnectBluetoothPrinter();
+                    if (!reconnected) {
+                        await this.connectBluetoothPrinter();
+                    }
                 }
                 
                 // Fallback to active cart or last receipt if missing
@@ -2249,28 +2312,28 @@
                     const right = new Uint8Array([0x1b, 0x61, 0x02]);
                     const doubleSize = new Uint8Array([0x1d, 0x21, 0x11]);
                     const normalSize = new Uint8Array([0x1d, 0x21, 0x00]);
-                    const feed = new Uint8Array([0x0a, 0x0a, 0x0a, 0x0a]);
+                    const feed = new Uint8Array([0x1b, 0x64, 0x05, 0x0d, 0x0a, 0x0d, 0x0a]); // ESC 'd' 5 lines feed + CRLF
 
                     let data = [];
                     data.push(...init);
                     
                     // Store Header
                     data.push(...center, ...doubleSize);
-                    data.push(...encoder.encode("SHEYDE ENTERPRISE\n"));
+                    data.push(...encoder.encode("SHEYDE ENTERPRISE\r\n"));
                     data.push(...normalSize);
-                    data.push(...encoder.encode("Calbayog City, Samar\n"));
-                    data.push(...encoder.encode("Contact: 09973803250 / 09169104900\n"));
-                    data.push(...encoder.encode("================================\n"));
+                    data.push(...encoder.encode("Calbayog City, Samar\r\n"));
+                    data.push(...encoder.encode("Contact: 09973803250 / 09169104900\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
                     
                     // Transaction Metadata
                     data.push(...left);
-                    data.push(...encoder.encode(`Invoice:  ${receipt.invoice_no || 'POS-' + Date.now().toString().slice(-6)}\n`));
-                    data.push(...encoder.encode(`Date:     ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`));
-                    data.push(...encoder.encode(`Customer: ${receipt.customer_name || 'Walk-in Customer'}\n`));
-                    data.push(...encoder.encode(`Payment:  ${receipt.method || 'Cash'}\n`));
-                    data.push(...encoder.encode("--------------------------------\n"));
+                    data.push(...encoder.encode(`Invoice:  ${receipt.invoice_no || 'POS-' + Date.now().toString().slice(-6)}\r\n`));
+                    data.push(...encoder.encode(`Date:     ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\r\n`));
+                    data.push(...encoder.encode(`Customer: ${receipt.customer_name || 'Walk-in Customer'}\r\n`));
+                    data.push(...encoder.encode(`Payment:  ${receipt.method || 'Cash'}\r\n`));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
                     
-                    // Line Items (2-line clean format for 58mm/80mm ESC/POS thermal printers)
+                    // Line Items (2-line clean CRLF format for 58mm/80mm ESC/POS thermal printers)
                     let items = (receipt && receipt.items && receipt.items.length) ? receipt.items : [];
                     if (items.length > 0) {
                         items.forEach((item, index) => {
@@ -2280,41 +2343,40 @@
                             let total = parseFloat(item.total || (qty * price) || 0).toFixed(2);
                             
                             // Line 1: Item Name
-                            data.push(...encoder.encode(`${itemName}\n`));
+                            data.push(...encoder.encode(`${itemName}\r\n`));
                             // Line 2: Qty x Unit Price = Total Price
-                            data.push(...encoder.encode(`  ${qty} x PHP ${price} = PHP ${total}\n`));
+                            data.push(...encoder.encode(`  ${qty} x PHP ${price} = PHP ${total}\r\n`));
                         });
                     } else {
-                        data.push(...encoder.encode("  No items recorded\n"));
+                        data.push(...encoder.encode("  No items recorded\r\n"));
                     }
                     
-                    data.push(...encoder.encode("--------------------------------\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
                     
                     // Financial Summary
                     let grandTotal = parseFloat(receipt.total || 0).toFixed(2);
                     data.push(...right);
-                    data.push(...encoder.encode(`GRAND TOTAL: PHP ${grandTotal}\n`));
+                    data.push(...encoder.encode(`GRAND TOTAL: PHP ${grandTotal}\r\n`));
                     
                     if (receipt.paymentCash && parseFloat(receipt.paymentCash) > 0) {
                         let cashPaid = parseFloat(receipt.paymentCash).toFixed(2);
-                        data.push(...encoder.encode(`Cash Paid:   PHP ${cashPaid}\n`));
+                        data.push(...encoder.encode(`Cash Paid:   PHP ${cashPaid}\r\n`));
                         let change = parseFloat(receipt.paymentCash) - parseFloat(receipt.total || 0);
                         if (change > 0) {
-                            data.push(...encoder.encode(`Change:      PHP ${change.toFixed(2)}\n`));
+                            data.push(...encoder.encode(`Change:      PHP ${change.toFixed(2)}\r\n`));
                         }
                     }
                     if (receipt.paymentEWallet && parseFloat(receipt.paymentEWallet) > 0) {
-                        data.push(...encoder.encode(`E-Wallet:    PHP ${parseFloat(receipt.paymentEWallet).toFixed(2)}\n`));
+                        data.push(...encoder.encode(`E-Wallet:    PHP ${parseFloat(receipt.paymentEWallet).toFixed(2)}\r\n`));
                     }
                     
                     // Footer Feed
                     data.push(...center);
-                    data.push(...encoder.encode("\nThank you for your business!\n"));
-                    data.push(...encoder.encode("SHEYDE Wholesale & Retail\n"));
+                    data.push(...encoder.encode("\r\nThank you for your business!\r\n"));
+                    data.push(...encoder.encode("SHEYDE Wholesale & Retail\r\n"));
                     data.push(...feed);
                     
                     await this.writeToPrinter(new Uint8Array(data));
-                    alert("Receipt printed successfully to Bluetooth thermal printer!");
                 } catch(e) {
                     console.error("BT Receipt print failed: ", e);
                     alert("BT printing failed: " + e.message);
