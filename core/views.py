@@ -770,7 +770,7 @@ def export_pdf(request):
 
     elif report_type == 'inventory':
         # Inventory Stock Master Report
-        story.append(Paragraph("SHEYDE ENTERPRISE - Inventory Stock Master Report", title_style))
+        story.append(Paragraph("SHEYDE SARI-SARI STORE - Inventory Stock Master Report", title_style))
         story.append(Paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
         story.append(Spacer(1, 15))
         
@@ -804,11 +804,11 @@ def export_pdf(request):
         ]))
         story.append(table)
         story.append(Spacer(1, 20))
-        story.append(Paragraph("Official Sheyde Enterprise Stock Level Audit Report", normal_style))
+        story.append(Paragraph("Official Sheyde Sari-Sari Store Stock Level Audit Report", normal_style))
 
     else:
         # General Sales Summary
-        story.append(Paragraph("SHEYDE ENTERPRISE - Sales Summary Statement Report", title_style))
+        story.append(Paragraph("SHEYDE SARI-SARI STORE - Sales Summary Statement Report", title_style))
         story.append(Paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
         story.append(Spacer(1, 15))
         
