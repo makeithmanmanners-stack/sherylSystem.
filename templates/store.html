@@ -880,7 +880,12 @@
                     try {
                         const devices = await navigator.bluetooth.getDevices();
                         if (devices && devices.length > 0) {
-                            const device = devices[0];
+                            const savedId = localStorage.getItem('bt_printer_id');
+                            let device = devices[0];
+                            if (savedId) {
+                                const match = devices.find(d => d.id === savedId);
+                                if (match) device = match;
+                            }
                             console.log("Auto-connecting to remembered Bluetooth printer:", device.name);
                             const server = await device.gatt.connect();
                             const optionalServices = [
@@ -913,6 +918,13 @@
                                 this.btCharacteristic = characteristic;
                                 this.btPrinterConnected = true;
                                 this.btPrinterName = device.name || "Bluetooth Thermal Printer";
+                                localStorage.setItem('bt_printer_id', device.id);
+                                
+                                device.addEventListener('gattserverdisconnected', () => {
+                                    this.btPrinterConnected = false;
+                                    this.autoConnectBluetoothPrinter();
+                                });
+                                
                                 console.log("Auto-connected to Bluetooth printer:", this.btPrinterName);
                                 return true;
                             }
@@ -967,13 +979,17 @@
                         this.btCharacteristic = characteristic;
                         this.btPrinterConnected = true;
                         this.btPrinterName = device.name || "Bluetooth Thermal Printer";
-                        alert(`Connected successfully to: ${this.btPrinterName}`);
+                        localStorage.setItem('bt_printer_id', device.id);
+                        
+                        device.addEventListener('gattserverdisconnected', () => {
+                            this.btPrinterConnected = false;
+                            this.autoConnectBluetoothPrinter();
+                        });
                     } else {
                         throw new Error("Could not find ESC/POS write characteristic on the selected Bluetooth printer.");
                     }
                 } catch(err) {
                     console.error("Bluetooth printer connection failed: ", err);
-                    alert("Bluetooth connection failed: " + err.message);
                 }
             },
 
@@ -987,7 +1003,6 @@
                 this.btCharacteristic = null;
                 this.btPrinterConnected = false;
                 this.btPrinterName = '';
-                alert("Bluetooth printer disconnected.");
             },
 
             async writeToPrinter(bytes) {
@@ -1036,7 +1051,6 @@
                     data.push(...encoder.encode("SHEYDE SARI-SARI STORE\r\n"));
                     data.push(...normalSize);
                     data.push(...encoder.encode("Calbayog City, Samar\r\n"));
-                    data.push(...encoder.encode("Contact: 09973803250\r\n"));
                     data.push(...encoder.encode("--------------------------------\r\n"));
                     data.push(...left);
                     data.push(...encoder.encode("Status: Connected OK\r\n"));
@@ -1048,9 +1062,8 @@
                     data.push(...feed);
 
                     await this.writeToPrinter(new Uint8Array(data));
-                    alert("Test page printed successfully!");
                 } catch(e) {
-                    alert("Printing failed: " + e.message);
+                    console.error("Test print failed: ", e);
                 }
             },
 
@@ -1077,7 +1090,6 @@
                     data.push(...encoder.encode("SHEYDE SARI-SARI STORE\r\n"));
                     data.push(...normalSize);
                     data.push(...encoder.encode("Calbayog City, Samar\r\n"));
-                    data.push(...encoder.encode("Contact: 09973803250\r\n"));
                     data.push(...encoder.encode("================================\r\n"));
                     data.push(...left);
                     data.push(...encoder.encode(`Invoice No: ${receipt.invoice_no || 'N/A'}\r\n`));
