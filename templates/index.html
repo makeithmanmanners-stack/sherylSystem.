@@ -2609,12 +2609,8 @@
 
             async connectBluetoothPrinter() {
                 if (!navigator || !navigator.bluetooth) {
-                    let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                    if (isIOS) {
-                        alert("📱 MOBILE PRINTING GUIDE FOR IPHONE/IPAD (iOS):\n\nSafari on iOS restricts Web Bluetooth.\n\n2 EASY WAYS TO PRINT ON IPHONE:\n1. Tap 'Thermal Print Receipt' directly — it will auto-send via Mobile Print Service / RawBT!\n2. OR open this site in the free 'Bluefy - Web Bluetooth Browser' app from App Store for direct Bluetooth pairing.");
-                    } else {
-                        alert("📱 MOBILE PRINTING GUIDE FOR ANDROID:\n\n1. Use Google Chrome Browser app on Android.\n2. Turn ON Bluetooth and Location (GPS) in phone settings.\n3. In Chrome Settings > Site Settings > Bluetooth, ensure permission is ALLOWED.");
-                    }
+                    // Silent fallback for non-WebBluetooth mobile browsers (e.g. iPhone Safari): trigger receipt print directly!
+                    this.printBluetoothReceipt();
                     return;
                 }
                 try {
@@ -2690,16 +2686,10 @@
                             console.log("Printer disconnected. Instant background reconnecting...");
                             setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                         });
-
-                        alert(`Bluetooth Thermal Printer Connected: ${this.btPrinterName}`);
-                    } else {
-                        alert("Printer paired successfully! Ready to print.");
                     }
                 } catch(err) {
-                    console.error("Bluetooth printer connection error: ", err);
-                    if (err && err.name !== "NotFoundError" && !String(err).includes("User cancelled")) {
-                        alert("Bluetooth pairing notice: " + (err.message || err));
-                    }
+                    console.log("Bluetooth printer connection notice: ", err);
+                    this.printBluetoothReceipt();
                 }
             },
             
