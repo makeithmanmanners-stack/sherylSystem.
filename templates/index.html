@@ -2802,7 +2802,7 @@
                     data.push(...encoder.encode("================================\r\n"));
 
                     // CASHIER INFORMATION ONLY (AGENT INFORMATION REMOVED AS REQUESTED)
-                    let cashierName = (receipt && receipt.cashier_name ? receipt.cashier_name : "Sheyde Deonn Vasquez").toUpperCase();
+                    let cashierName = "SHEYDE DEONN VASQUEZ";
                     data.push(...encoder.encode("CASHIER INFORMATION\r\n"));
                     data.push(...encoder.encode(`NAME: ${cashierName}\r\n`));
                     data.push(...encoder.encode("SIGN: __________________________\r\n"));
