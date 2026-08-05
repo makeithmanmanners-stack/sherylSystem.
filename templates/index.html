@@ -776,7 +776,45 @@
             
             <!-- Recent Sales & Customer Orders Ledger -->
             <div class="border border-glassBorder p-5 rounded-xl bg-gray-900/20 mt-4">
-                <h4 class="font-bold text-xs text-accentCyan uppercase mb-3"><i class="fa-solid fa-list-check mr-1"></i> Recent Sales & Customer Orders</h4>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-glassBorder">
+                    <div>
+                        <h4 class="font-extrabold text-sm text-accentCyan uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list-check"></i> Recent Sales & Customer Orders Ledger
+                        </h4>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Filter active sales transactions by Day, Week, Month, or Year to track customer orders.</p>
+                    </div>
+
+                    <!-- Timeframe Filter Tabs -->
+                    <div class="flex items-center gap-1.5 bg-gray-950/80 p-1.5 rounded-xl border border-glassBorder shrink-0 flex-wrap">
+                        <button @click="salesFilterPeriod = 'day'" :class="salesFilterPeriod === 'day' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-day text-[10px]"></i> Day (Today)
+                        </button>
+                        <button @click="salesFilterPeriod = 'week'" :class="salesFilterPeriod === 'week' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-week text-[10px]"></i> Week
+                        </button>
+                        <button @click="salesFilterPeriod = 'month'" :class="salesFilterPeriod === 'month' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-days text-[10px]"></i> Month
+                        </button>
+                        <button @click="salesFilterPeriod = 'year'" :class="salesFilterPeriod === 'year' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar text-[10px]"></i> Year
+                        </button>
+                        <button @click="salesFilterPeriod = 'all'" :class="salesFilterPeriod === 'all' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-infinity text-[10px]"></i> All Time
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Statistics Badge -->
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-gray-950/40 p-2.5 rounded-lg border border-glassBorder/60 mb-3">
+                    <span class="text-gray-400 font-mono">
+                        Showing <b class="text-white" x-text="filteredLedgerSales().length"></b> transaction(s) for 
+                        <b class="text-accentCyan uppercase" x-text="salesFilterPeriod === 'day' ? 'Today' : salesFilterPeriod === 'week' ? 'This Week' : salesFilterPeriod === 'month' ? 'This Month' : salesFilterPeriod === 'year' ? 'This Year' : 'All Time'"></b>
+                    </span>
+                    <span class="text-gray-400 font-mono">
+                        Total Sales Volume: <b class="text-accentGreen font-bold" x-text="'₱' + formatCurrency(filteredLedgerTotal())"></b>
+                    </span>
+                </div>
+
                 <div class="overflow-x-auto max-h-[350px]">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
@@ -791,7 +829,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-glassBorder/40">
-                            <template x-for="sale in sales" :key="sale.invoice_no">
+                            <template x-for="sale in filteredLedgerSales()" :key="sale.invoice_no">
                                 <tr class="hover:bg-gray-950/30 transition-colors">
                                     <td class="p-3 font-mono font-bold text-white" x-text="sale.invoice_no"></td>
                                     <td class="p-3 text-gray-450 font-mono" x-text="sale.date ? sale.date.slice(0,10) : 'N/A'"></td>
@@ -809,6 +847,13 @@
                                         <template x-for="item in sale.items" :key="item.product_sku">
                                             <span class="block font-mono" x-text="'- ' + (item.product_name || item.product_sku) + ' x' + item.qty"></span>
                                         </template>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="filteredLedgerSales().length === 0">
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-gray-500 font-semibold">
+                                        No sales or customer orders found for this timeframe (<span x-text="salesFilterPeriod"></span>).
                                     </td>
                                 </tr>
                             </template>
@@ -1740,6 +1785,9 @@
             depositAmount: 0,
             depositRef: '',
             
+            // Sales & Customer Orders Filter State (defaults to 'day' to prevent overflow for next day)
+            salesFilterPeriod: 'day',
+            
             routeChart: null,
             
             initAdmin() {
@@ -1891,6 +1939,58 @@
                 
                 let sorted = Object.values(routeSales).sort((a,b) => b.sales - a.sales);
                 return sorted.slice(0, 3);
+            },
+
+            filteredLedgerSales() {
+                if (!this.sales || !this.sales.length) return [];
+                
+                const now = new Date();
+                const todayStr = now.toISOString().slice(0, 10);
+                
+                const parseSaleDate = (s) => {
+                    if (!s || !s.date) return null;
+                    let d = new Date(s.date);
+                    return isNaN(d.getTime()) ? null : d;
+                };
+
+                if (this.salesFilterPeriod === 'day') {
+                    // Current day transactions only (resets view for next day to prevent overflow)
+                    return this.sales.filter(s => {
+                        if (!s.date) return false;
+                        let dateStr = String(s.date).slice(0, 10);
+                        return dateStr === todayStr;
+                    });
+                } else if (this.salesFilterPeriod === 'week') {
+                    // Past 7 days / This week
+                    const pastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    return this.sales.filter(s => {
+                        let d = parseSaleDate(s);
+                        return d && d >= pastWeek && d <= now;
+                    });
+                } else if (this.salesFilterPeriod === 'month') {
+                    // This Month
+                    const curYear = now.getFullYear();
+                    const curMonth = now.getMonth();
+                    return this.sales.filter(s => {
+                        let d = parseSaleDate(s);
+                        return d && d.getFullYear() === curYear && d.getMonth() === curMonth;
+                    });
+                } else if (this.salesFilterPeriod === 'year') {
+                    // This Year
+                    const curYear = now.getFullYear();
+                    return this.sales.filter(s => {
+                        let d = parseSaleDate(s);
+                        return d && d.getFullYear() === curYear;
+                    });
+                } else {
+                    // All time
+                    return this.sales;
+                }
+            },
+
+            filteredLedgerTotal() {
+                let salesList = this.filteredLedgerSales();
+                return salesList.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
             },
             
             criticalProductsCount() {
