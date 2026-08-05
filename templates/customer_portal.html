@@ -776,10 +776,11 @@
                 // Storefront Catalog logic
                 filteredProducts() {
                     return this.products.filter(p => {
-                        let search = this.searchQuery.toLowerCase();
-                        let matchesSearch = p.name.toLowerCase().includes(search) || 
-                                            p.sku.toLowerCase().includes(search);
-                        let matchesCategory = this.selectedCategory === '' || p.category_id == this.selectedCategory;
+                        let search = (this.searchQuery || '').toLowerCase();
+                        let nameStr = (p.name || '').toLowerCase();
+                        let skuStr = (p.sku || '').toLowerCase();
+                        let matchesSearch = !search || nameStr.includes(search) || skuStr.includes(search);
+                        let matchesCategory = !this.selectedCategory || String(p.category_id || p.category) === String(this.selectedCategory);
                         return matchesSearch && matchesCategory;
                     });
                 },

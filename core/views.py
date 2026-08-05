@@ -38,7 +38,13 @@ def serialize_model(model_obj):
             data[field.name] = val.isoformat()
         elif hasattr(val, 'url'):
             try:
-                data[field.name] = val.url
+                name_str = str(getattr(val, 'name', '') or '')
+                if name_str.startswith('http://') or name_str.startswith('https://'):
+                    data[field.name] = name_str
+                elif val:
+                    data[field.name] = val.url
+                else:
+                    data[field.name] = None
             except ValueError:
                 data[field.name] = None
         elif hasattr(val, 'pk'):
@@ -69,8 +75,11 @@ def get_current_state():
     products = []
     for p in Product.objects.all():
         p_data = serialize_model(p)
+        p_data["category_id"] = p.category.id if p.category else None
         p_data["category_name"] = p.category.name if p.category else ""
+        p_data["brand_id"] = p.brand.id if p.brand else None
         p_data["brand_name"] = p.brand.name if p.brand else ""
+        p_data["supplier_id"] = p.supplier.id if p.supplier else None
         p_data["supplier_name"] = p.supplier.name if p.supplier else ""
         products.append(p_data)
     state["products"] = products

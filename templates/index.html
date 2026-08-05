@@ -1754,8 +1754,8 @@
                     let nameStr = (p.name || '').toLowerCase();
                     let skuStr = (p.sku || '').toLowerCase();
                     let searchStr = (this.inventorySearch || '').toLowerCase();
-                    let matchesSearch = nameStr.includes(searchStr) || skuStr.includes(searchStr);
-                    let matchesCategory = !this.inventoryCategoryFilter || p.category == this.inventoryCategoryFilter;
+                    let matchesSearch = !searchStr || nameStr.includes(searchStr) || skuStr.includes(searchStr);
+                    let matchesCategory = !this.inventoryCategoryFilter || String(p.category_id || p.category) === String(this.inventoryCategoryFilter);
                     return matchesSearch && matchesCategory;
                 });
             },

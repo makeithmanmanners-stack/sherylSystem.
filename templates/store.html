@@ -727,9 +727,9 @@
                     let nameStr = (p.name || '').toLowerCase();
                     let skuStr = (p.sku || '').toLowerCase();
                     let searchStr = (this.searchQuery || '').toLowerCase();
-                    let matchesSearch = nameStr.includes(searchStr) || skuStr.includes(searchStr);
-                    let matchesCategory = this.selectedCategory === '' || p.category === this.selectedCategory;
-                    let matchesBrand = this.selectedBrand === '' || p.brand === parseInt(this.selectedBrand);
+                    let matchesSearch = !searchStr || nameStr.includes(searchStr) || skuStr.includes(searchStr);
+                    let matchesCategory = !this.selectedCategory || String(p.category_id || p.category) === String(this.selectedCategory);
+                    let matchesBrand = !this.selectedBrand || String(p.brand_id || p.brand) === String(this.selectedBrand);
                     return matchesSearch && matchesCategory && matchesBrand;
                 });
             },
