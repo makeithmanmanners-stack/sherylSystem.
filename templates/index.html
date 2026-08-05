@@ -1128,14 +1128,18 @@
                     <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Retail Price (PHP) *</label>
                     <input type="number" step="0.01" x-model="newRetailPrice" class="w-full glass-input rounded px-3 py-2">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Initial Stock</label>
+                        <input type="number" min="0" x-model.number="newStockQty" class="w-full glass-input rounded px-3 py-2">
+                    </div>
                     <div>
                         <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Min Stock</label>
-                        <input type="number" x-model="newMinStock" class="w-full glass-input rounded px-3 py-2">
+                        <input type="number" min="0" x-model.number="newMinStock" class="w-full glass-input rounded px-3 py-2">
                     </div>
                     <div>
                         <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Max Stock</label>
-                        <input type="number" x-model="newMaxStock" class="w-full glass-input rounded px-3 py-2">
+                        <input type="number" min="1" x-model.number="newMaxStock" class="w-full glass-input rounded px-3 py-2">
                     </div>
                 </div>
             </div>
@@ -1766,6 +1770,7 @@
                 this.newCostPrice = 0;
                 this.newWholesalePrice = 0;
                 this.newRetailPrice = 0;
+                this.newStockQty = 10;
                 this.newMinStock = 5;
                 this.newMaxStock = 100;
                 this.newBarcode = '';
@@ -1787,6 +1792,7 @@
                     cost_price: parseFloat(this.newCostPrice) || 0,
                     wholesale_price: parseFloat(this.newWholesalePrice) || 0,
                     retail_price: parseFloat(this.newRetailPrice) || 0,
+                    stock_quantity: parseInt(this.newStockQty) || 0,
                     min_stock: parseInt(this.newMinStock) || 5,
                     max_stock: parseInt(this.newMaxStock) || 100,
                     barcode: this.newBarcode,

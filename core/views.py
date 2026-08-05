@@ -609,11 +609,19 @@ def api_state(request):
                 )
 
             elif action == "create_product":
-                sku = data.get("sku")
-                name = data.get("name")
+                sku = str(data.get("sku", "")).strip()
+                name = str(data.get("name", "")).strip()
+                
+                if not sku or not name:
+                    return JsonResponse({"success": False, "error": "SKU and Product Name are required."})
+                    
+                if Product.objects.filter(sku__iexact=sku).exists():
+                    return JsonResponse({"success": False, "error": f"A product with SKU '{sku}' already exists in inventory catalog."})
+                    
                 cost_price = Decimal(str(data.get("cost_price", 0)))
                 wholesale_price = Decimal(str(data.get("wholesale_price", 0)))
                 retail_price = Decimal(str(data.get("retail_price", 0)))
+                stock_qty = int(data.get("stock_quantity", 0))
                 min_stock = int(data.get("min_stock", 5))
                 max_stock = int(data.get("max_stock", 100))
                 barcode_str = data.get("barcode", "")
@@ -634,7 +642,7 @@ def api_state(request):
                     cost_price=cost_price,
                     wholesale_price=wholesale_price,
                     retail_price=retail_price,
-                    stock_quantity=0,
+                    stock_quantity=stock_qty,
                     min_stock=min_stock,
                     max_stock=max_stock,
                     barcode=barcode_str,
@@ -645,7 +653,7 @@ def api_state(request):
                     user=request.user.username if request.user.is_authenticated else "system",
                     action="Add Product",
                     module="Products",
-                    details=f"Added new product {name} ({sku}) to catalog."
+                    details=f"Added new product {name} ({sku}) with initial stock of {stock_qty} cases to catalog."
                 )
 
             return JsonResponse({"success": True, "state": get_current_state()})
