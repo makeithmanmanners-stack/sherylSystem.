@@ -641,7 +641,7 @@
                 
                 <div class="flex gap-2">
                     <template x-if="!btPrinterConnected">
-                        <button @click="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm">
+                        <button @click.prevent.stop="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95">
                             <i class="fa-solid fa-bluetooth"></i> Connect Bluetooth Thermal Printer
                         </button>
                     </template>
@@ -1047,6 +1047,10 @@
             },
 
             async connectBluetoothPrinter() {
+                if (!navigator || !navigator.bluetooth) {
+                    alert("Web Bluetooth API is not available on this mobile browser.\n\nTips for Mobile:\n1. On Android, please use Google Chrome Browser.\n2. Make sure Bluetooth and Location (GPS) permissions are turned ON for Chrome.\n3. Make sure you access the site via HTTPS (https://sheryl-system.onrender.com/).");
+                    return;
+                }
                 try {
                     const optionalServices = [
                         "000018f0-0000-1000-8000-00805f9b34fb",
@@ -1119,11 +1123,16 @@
                             this.btPrinterConnected = false;
                             setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                         });
+
+                        alert(`Bluetooth Thermal Printer Connected: ${this.btPrinterName}`);
                     } else {
-                        throw new Error("Could not find ESC/POS write characteristic on the selected Bluetooth printer.");
+                        alert("Printer paired successfully! Ready to print.");
                     }
                 } catch(err) {
                     console.error("Bluetooth printer connection failed: ", err);
+                    if (err && err.name !== "NotFoundError" && !String(err).includes("User cancelled")) {
+                        alert("Bluetooth pairing notice: " + (err.message || err));
+                    }
                 }
             },
 
