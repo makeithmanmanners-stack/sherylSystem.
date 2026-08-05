@@ -2946,18 +2946,8 @@
                     this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n================================\n` +
                     `CASHIER INFORMATION\nNAME: SHEYDE DEONN VASQUEZ\nSIGN: __________________________\n================================\n`;
 
-                let rawbtUri = "rawbt:text/" + encodeURIComponent(plainReceiptText);
-                let isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    try {
-                        window.location.href = rawbtUri;
-                    } catch(e) {
-                        window.print();
-                    }
-                } else {
-                    window.print();
-                }
+                // Clean System Thermal Print Fallback (Zero app launch errors across iOS Safari & Android)
+                window.print();
             },
             
             // Quick Invoice Sheet
