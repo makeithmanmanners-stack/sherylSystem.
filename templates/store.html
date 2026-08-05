@@ -1050,9 +1050,9 @@
                 if (!navigator || !navigator.bluetooth) {
                     let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
                     if (isIOS) {
-                        alert("📱 BLUETOOTH PAIRING ON IPHONE / IPAD:\n\n1. Safari blocks direct Web Bluetooth.\n2. Please open this site in the free 'Bluefy - Web Bluetooth Browser' app from the App Store to pair directly via Bluetooth!");
+                        alert("📱 TO OPEN THE BLUETOOTH PAIRING DIALOG ON IPHONE / IPAD:\n\n1. Safari blocks direct Web Bluetooth.\n2. Please open sheryl-system.onrender.com inside the free 'Bluefy - Web Bluetooth Browser' app from the App Store to open the native 'wants to pair' dialog!");
                     } else {
-                        alert("📱 BLUETOOTH PAIRING ON ANDROID:\n\n1. Please use Google Chrome Browser.\n2. Turn ON Bluetooth & Location (GPS) in phone settings.\n3. Allow Bluetooth permissions for this site.");
+                        alert("📱 TO OPEN THE BLUETOOTH PAIRING DIALOG ON ANDROID:\n\n1. Please use Google Chrome Browser.\n2. Turn ON Bluetooth & Location (GPS) in phone settings.\n3. Make sure Bluetooth site permissions are ALLOWED in Chrome.");
                     }
                     return;
                 }
@@ -1063,22 +1063,23 @@
                         "00004953-5343-fe5d-4b5c-8735163f435a",
                         "00001101-0000-1000-8000-00805f9b34fb",
                         "0000ff00-0000-1000-8000-00805f9b34fb",
-                        "0000ffe0-0000-1000-8000-00805f9b34fb"
+                        "0000ffe0-0000-1000-8000-00805f9b34fb",
+                        "0000ff02-0000-1000-8000-00805f9b34fb"
                     ];
                     
                     let device = null;
                     try {
+                        device = await navigator.bluetooth.requestDevice({
+                            acceptAllDevices: true,
+                            optionalServices: optionalServices
+                        });
+                    } catch(eAll) {
                         device = await navigator.bluetooth.requestDevice({
                             filters: [
                                 { services: ["000018f0-0000-1000-8000-00805f9b34fb"] },
                                 { services: ["0000ffe0-0000-1000-8000-00805f9b34fb"] },
                                 { services: ["00001101-0000-1000-8000-00805f9b34fb"] }
                             ],
-                            optionalServices: optionalServices
-                        });
-                    } catch(eFilter) {
-                        device = await navigator.bluetooth.requestDevice({
-                            acceptAllDevices: true,
                             optionalServices: optionalServices
                         });
                     }
@@ -1141,9 +1142,9 @@
                             setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                         });
 
-                        alert(`✅ Bluetooth Printer Connected: ${this.btPrinterName}`);
+                        alert(`✅ Bluetooth Printer Paired & Connected: ${this.btPrinterName}`);
                     } else {
-                        alert("Printer paired successfully!");
+                        alert("Bluetooth Printer paired successfully!");
                     }
                 } catch(err) {
                     console.log("Bluetooth printer pairing cancelled or error: ", err);
