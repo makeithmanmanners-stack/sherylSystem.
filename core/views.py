@@ -36,21 +36,19 @@ def serialize_model(model_obj):
             data[field.name] = float(val)
         elif isinstance(val, (datetime, date)):
             data[field.name] = val.isoformat()
-        elif hasattr(val, 'url'):
+        elif bool(val) and hasattr(val, 'url'):
             try:
                 name_str = str(getattr(val, 'name', '') or '')
                 if name_str.startswith('http://') or name_str.startswith('https://'):
                     data[field.name] = name_str
-                elif val:
-                    data[field.name] = val.url
                 else:
-                    data[field.name] = None
-            except ValueError:
+                    data[field.name] = val.url
+            except Exception:
                 data[field.name] = None
         elif hasattr(val, 'pk'):
             data[field.name] = val.pk
         else:
-            data[field.name] = val
+            data[field.name] = str(val) if val is not None else None
     return data
 
 def get_current_state():
