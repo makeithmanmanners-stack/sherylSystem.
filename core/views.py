@@ -253,7 +253,13 @@ def api_state(request):
     
     elif request.method == 'POST':
         try:
-            data = json.loads(request.body)
+            if request.content_type and 'multipart/form-data' in request.content_type:
+                data = request.POST
+            else:
+                try:
+                    data = json.loads(request.body)
+                except Exception:
+                    data = request.POST
             action = data.get("action")
             
             # Action Handlers
@@ -631,11 +637,14 @@ def api_state(request):
                 cat_id = data.get("category_id")
                 supplier_id = data.get("supplier_id")
                 
-                brand = Brand.objects.filter(id=brand_id).first() if brand_id else None
-                cat = Category.objects.filter(id=cat_id).first() if cat_id else None
-                supplier = Supplier.objects.filter(id=supplier_id).first() if supplier_id else None
+                brand = Brand.objects.filter(id=brand_id).first() if brand_id and str(brand_id) not in ('', 'null', 'None') else None
+                cat = Category.objects.filter(id=cat_id).first() if cat_id and str(cat_id) not in ('', 'null', 'None') else None
+                supplier = Supplier.objects.filter(id=supplier_id).first() if supplier_id and str(supplier_id) not in ('', 'null', 'None') else None
                 
-                Product.objects.create(
+                image_file = request.FILES.get('image') or request.FILES.get('image_file')
+                image_url_val = data.get("image_url", "").strip() if isinstance(data.get("image_url"), str) else ""
+
+                new_product = Product.objects.create(
                     sku=sku,
                     name=name,
                     brand=brand,
@@ -649,12 +658,72 @@ def api_state(request):
                     barcode=barcode_str,
                     supplier=supplier
                 )
+
+                if image_file:
+                    new_product.image_url = image_file
+                    new_product.save()
+                elif image_url_val:
+                    new_product.image_url = image_url_val
+                    new_product.save()
                 
                 AuditLog.objects.create(
                     user=request.user.username if request.user.is_authenticated else "system",
                     action="Add Product",
                     module="Products",
                     details=f"Added new product {name} ({sku}) with initial stock of {stock_qty} cases to catalog."
+                )
+
+            elif action == "update_product":
+                sku = str(data.get("sku", "")).strip()
+                prod = Product.objects.filter(sku=sku).first()
+                if not prod:
+                    return JsonResponse({"success": False, "error": f"Product with SKU '{sku}' not found."})
+                
+                name = str(data.get("name", "")).strip()
+                if name:
+                    prod.name = name
+                
+                if "cost_price" in data:
+                    prod.cost_price = Decimal(str(data.get("cost_price", 0)))
+                if "wholesale_price" in data:
+                    prod.wholesale_price = Decimal(str(data.get("wholesale_price", 0)))
+                if "retail_price" in data:
+                    prod.retail_price = Decimal(str(data.get("retail_price", 0)))
+                if "stock_quantity" in data:
+                    prod.stock_quantity = int(data.get("stock_quantity", 0))
+                if "min_stock" in data:
+                    prod.min_stock = int(data.get("min_stock", 5))
+                if "max_stock" in data:
+                    prod.max_stock = int(data.get("max_stock", 100))
+                if "barcode" in data:
+                    prod.barcode = str(data.get("barcode", ""))
+                
+                brand_id = data.get("brand_id")
+                cat_id = data.get("category_id")
+                supplier_id = data.get("supplier_id")
+                
+                if brand_id is not None:
+                    prod.brand = Brand.objects.filter(id=brand_id).first() if str(brand_id) not in ('', 'null', 'None') else None
+                if cat_id is not None:
+                    prod.category = Category.objects.filter(id=cat_id).first() if str(cat_id) not in ('', 'null', 'None') else None
+                if supplier_id is not None:
+                    prod.supplier = Supplier.objects.filter(id=supplier_id).first() if str(supplier_id) not in ('', 'null', 'None') else None
+
+                image_file = request.FILES.get('image') or request.FILES.get('image_file')
+                image_url_val = data.get("image_url", "").strip() if isinstance(data.get("image_url"), str) else ""
+
+                if image_file:
+                    prod.image_url = image_file
+                elif image_url_val:
+                    prod.image_url = image_url_val
+
+                prod.save()
+
+                AuditLog.objects.create(
+                    user=request.user.username if request.user.is_authenticated else "system",
+                    action="Update Product",
+                    module="Products",
+                    details=f"Updated product details and image for {prod.name} ({sku})."
                 )
 
             return JsonResponse({"success": True, "state": get_current_state()})
