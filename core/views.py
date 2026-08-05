@@ -318,6 +318,7 @@ def api_state(request):
                     module="Sales",
                     details=f"Created Invoice {invoice_no} worth PHP {total:.2f}. Method: {method}. Status: {status}."
                 )
+                return JsonResponse({"success": True, "invoice_no": invoice_no, "state": get_current_state()})
 
             elif action == "approve_sale":
                 invoice_no = data.get("invoice_no")
@@ -696,7 +697,7 @@ def generate_qrcode(request, sku):
     return HttpResponse(buffer.getvalue(), content_type="image/png")
 
 def export_excel(request):
-    # Generates Excel sheets for Sales and Inventory reports
+    # Generates Excel sheets for Sales, Inventory, and Purchase Orders reports
     report_type = request.GET.get('type', 'sales')
     wb = Workbook()
     ws = wb.active
@@ -706,11 +707,17 @@ def export_excel(request):
         ws.append(["SKU", "Product Name", "Category", "Brand", "Cost Price (PHP)", "Wholesale Price (PHP)", "Retail Price (PHP)", "Current Stock", "Min Stock", "Status"])
         for p in Product.objects.all():
             status = "Ok"
-            if p.stock_quantity <= p.min_stock:
-                status = "Critical Low Stock"
-            elif p.stock_quantity == 0:
+            if p.stock_quantity == 0:
                 status = "Out of Stock"
+            elif p.stock_quantity <= p.min_stock:
+                status = "Critical Low Stock"
             ws.append([p.sku, p.name, p.category.name if p.category else "", p.brand.name if p.brand else "", float(p.cost_price), float(p.wholesale_price), float(p.retail_price), p.stock_quantity, p.min_stock, status])
+    elif report_type in ['po', 'purchase_orders']:
+        ws.title = "Purchase Orders Report"
+        ws.append(["PO Number", "Date", "Supplier Name", "Grand Total (PHP)", "Status", "Items Summary"])
+        for po in PurchaseOrder.objects.order_by('-date'):
+            items_str = ", ".join([f"{item.product.sku} x{item.qty}" for item in po.items.all() if item.product])
+            ws.append([po.po_no, po.date.strftime("%Y-%m-%d %H:%M") if po.date else "", po.supplier.name if po.supplier else "N/A", float(po.total), po.status, items_str])
     else:
         ws.title = "Sales Report"
         ws.append(["Invoice No", "Date", "Customer", "Route", "Subtotal (PHP)", "Tax (PHP)", "Total (PHP)", "Payment Method", "Status"])
@@ -724,9 +731,10 @@ def export_excel(request):
     return response
 
 def export_pdf(request):
-    # PDF generation for sales receipts, inventory, or summary reports using ReportLab
+    # PDF generation for sales receipts, PO documents, inventory, or summary reports using ReportLab
     report_type = request.GET.get('type', 'sales')
     invoice_no = request.GET.get('invoice_no')
+    po_no = request.GET.get('po_no')
     
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
@@ -742,7 +750,50 @@ def export_pdf(request):
     )
     normal_style = styles['Normal']
     
-    if invoice_no:
+    if po_no:
+        # Exporting specific Purchase Order Document PDF
+        po = PurchaseOrder.objects.filter(po_no=po_no).first()
+        if not po:
+            return HttpResponse("Purchase Order not found", status=404)
+            
+        story.append(Paragraph("SHEYDE SARI-SARI STORE & DISTRIBUTORS", title_style))
+        story.append(Paragraph("Official Purchase Order (Restock PO)", styles['Heading2']))
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(f"PO Number: <b>{po.po_no}</b>", normal_style))
+        story.append(Paragraph(f"Order Date: {po.date.strftime('%Y-%m-%d %H:%M') if po.date else 'N/A'}", normal_style))
+        story.append(Paragraph(f"Supplier Name: <b>{po.supplier.name if po.supplier else 'General Supplier'}</b>", normal_style))
+        story.append(Paragraph(f"Contact Person: {po.supplier.contact_person if po.supplier and po.supplier.contact_person else 'N/A'} ({po.supplier.phone if po.supplier else ''})", normal_style))
+        story.append(Spacer(1, 15))
+        
+        data = [["SKU", "Product Description", "Qty (Cases)", "Unit Cost (PHP)", "Line Total (PHP)"]]
+        for item in po.items.all():
+            data.append([
+                item.product.sku if item.product else "N/A",
+                item.product.name[:30] if item.product else "Item",
+                str(item.qty),
+                f"{item.cost:.2f}",
+                f"{item.total:.2f}"
+            ])
+        data.append(["", "", "", "Grand Total:", f"{po.total:.2f}"])
+        
+        table = Table(data, colWidths=[100, 210, 70, 80, 80])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0284C7')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('GRID', (0,0), (-1,-2), 0.5, colors.grey),
+            ('FONTNAME', (3,-1), (-1,-1), 'Helvetica-Bold'),
+            ('LINEABOVE', (3,-1), (-1,-1), 1, colors.black),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+        story.append(Paragraph(f"PO Status: <b>{po.status}</b>", normal_style))
+        story.append(Spacer(1, 40))
+        story.append(Paragraph("Authorized Supplier Procurement Document — Sheyde Sari-Sari Store ERP", normal_style))
+
+    elif invoice_no:
         # Exporting specific Invoice
         sale = Sale.objects.filter(invoice_no=invoice_no).first()
         if not sale:
@@ -785,6 +836,35 @@ def export_pdf(request):
         story.append(Paragraph(f"Payment Method: <b>{sale.method}</b> | Status: <b>{sale.status}</b>", normal_style))
         story.append(Spacer(1, 40))
         story.append(Paragraph("Thank you for your patronage! Reconciled & Powered by Sheyde ERP", normal_style))
+
+    elif report_type in ['po', 'purchase_orders']:
+        # Purchase Orders Summary Report
+        story.append(Paragraph("SHEYDE SARI-SARI STORE - Supplier Purchase Orders Report", title_style))
+        story.append(Paragraph(f"Report Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
+        story.append(Spacer(1, 15))
+        
+        data = [["PO Number", "Date", "Supplier", "Total (PHP)", "Status"]]
+        for po in PurchaseOrder.objects.order_by('-date'):
+            data.append([
+                po.po_no,
+                po.date.strftime("%Y-%m-%d %H:%M") if po.date else "N/A",
+                po.supplier.name[:22] if po.supplier else "N/A",
+                f"{po.total:.2f}",
+                po.status
+            ])
+            
+        table = Table(data, colWidths=[120, 110, 150, 90, 75])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0F172A')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        story.append(table)
+        story.append(Spacer(1, 20))
+        story.append(Paragraph("Official Sheyde Sari-Sari Store Supplier Purchase Orders Report", normal_style))
 
     elif report_type == 'inventory':
         # Inventory Stock Master Report
@@ -862,3 +942,4 @@ def export_pdf(request):
     response['Content-Disposition'] = f'inline; filename="{filename}"'
     response.write(pdf)
     return response
+
