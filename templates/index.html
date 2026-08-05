@@ -2609,8 +2609,12 @@
 
             async connectBluetoothPrinter() {
                 if (!navigator || !navigator.bluetooth) {
-                    // Silent fallback for non-WebBluetooth mobile browsers (e.g. iPhone Safari): trigger receipt print directly!
-                    this.printBluetoothReceipt();
+                    let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                    if (isIOS) {
+                        alert("📱 BLUETOOTH PAIRING ON IPHONE / IPAD:\n\n1. Safari blocks direct Web Bluetooth.\n2. Please open this site in the free 'Bluefy - Web Bluetooth Browser' app from the App Store to pair directly via Bluetooth!");
+                    } else {
+                        alert("📱 BLUETOOTH PAIRING ON ANDROID:\n\n1. Please use Google Chrome Browser.\n2. Turn ON Bluetooth & Location (GPS) in phone settings.\n3. Allow Bluetooth permissions for this site.");
+                    }
                     return;
                 }
                 try {
@@ -2623,10 +2627,22 @@
                         "0000ffe0-0000-1000-8000-00805f9b34fb"
                     ];
                     
-                    const device = await navigator.bluetooth.requestDevice({
-                        acceptAllDevices: true,
-                        optionalServices: optionalServices
-                    });
+                    let device = null;
+                    try {
+                        device = await navigator.bluetooth.requestDevice({
+                            filters: [
+                                { services: ["000018f0-0000-1000-8000-00805f9b34fb"] },
+                                { services: ["0000ffe0-0000-1000-8000-00805f9b34fb"] },
+                                { services: ["00001101-0000-1000-8000-00805f9b34fb"] }
+                            ],
+                            optionalServices: optionalServices
+                        });
+                    } catch(eFilter) {
+                        device = await navigator.bluetooth.requestDevice({
+                            acceptAllDevices: true,
+                            optionalServices: optionalServices
+                        });
+                    }
                     
                     console.log(`Connecting to Bluetooth device: ${device.name || "Unnamed"}`);
                     const server = await device.gatt.connect();
@@ -2686,10 +2702,13 @@
                             console.log("Printer disconnected. Instant background reconnecting...");
                             setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                         });
+
+                        alert(`✅ Bluetooth Printer Connected: ${this.btPrinterName}`);
+                    } else {
+                        alert("Printer paired successfully!");
                     }
                 } catch(err) {
-                    console.log("Bluetooth printer connection notice: ", err);
-                    this.printBluetoothReceipt();
+                    console.log("Bluetooth printer pairing cancelled or error: ", err);
                 }
             },
             
