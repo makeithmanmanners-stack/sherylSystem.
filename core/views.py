@@ -32,7 +32,13 @@ def serialize_model(model_obj):
     data = {}
     for field in model_obj._meta.fields:
         val = getattr(model_obj, field.name)
-        if isinstance(val, (Decimal, float)):
+        if val is None:
+            data[field.name] = None
+        elif isinstance(val, bool):
+            data[field.name] = val
+        elif isinstance(val, int):
+            data[field.name] = val
+        elif isinstance(val, (Decimal, float)):
             data[field.name] = float(val)
         elif isinstance(val, (datetime, date)):
             data[field.name] = val.isoformat()
@@ -46,9 +52,9 @@ def serialize_model(model_obj):
             except Exception:
                 data[field.name] = None
         elif hasattr(val, 'pk'):
-            data[field.name] = val.pk
+            data[field.name] = val.pk if val else None
         else:
-            data[field.name] = str(val) if val is not None else None
+            data[field.name] = str(val)
     return data
 
 def get_current_state():
