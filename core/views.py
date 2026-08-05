@@ -157,11 +157,14 @@ def index(request):
         return HttpResponse("Access Denied: Admin privileges required.", status=403)
     return render(request, 'index.html')
 
+@login_required(login_url='login')
 def store(request):
-    if request.user.is_authenticated:
+    emp = getattr(request.user, 'employee', None)
+    if not request.user.is_superuser and (not emp or emp.role != 'Admin'):
         cust = getattr(request.user, 'customer_profile', None)
         if cust:
             return redirect('customer_portal')
+        return HttpResponse("Access Denied: Admin privileges required to access storefront.", status=403)
     return render(request, 'store.html')
 
 def login_view(request):
