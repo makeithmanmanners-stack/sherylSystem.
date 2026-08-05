@@ -1206,6 +1206,20 @@
                 }
             },
 
+            formatReceiptLine(leftStr, rightStr, width = 32) {
+                leftStr = String(leftStr || '');
+                rightStr = String(rightStr || '');
+                let available = width - rightStr.length;
+                if (available < 1) {
+                    return leftStr.substring(0, width);
+                }
+                if (leftStr.length > available) {
+                    leftStr = leftStr.substring(0, available - 1) + ' ';
+                }
+                let spaces = ' '.repeat(Math.max(0, width - leftStr.length - rightStr.length));
+                return leftStr + spaces + rightStr;
+            },
+
             async printBluetoothReceipt(receipt) {
                 if (!receipt) receipt = this.receiptData;
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
@@ -1225,37 +1239,122 @@
 
                     let data = [];
                     data.push(...init);
-                    data.push(...center, ...doubleSize);
-                    data.push(...encoder.encode("SHEYDE SARI-SARI STORE\r\n"));
+                    data.push(...center);
+                    
+                    data.push(...encoder.encode("MIN: 000000000000\r\n"));
+                    data.push(...encoder.encode("SERIAL #: 000000000000\r\n"));
+                    data.push(...encoder.encode("Brgy. Cagsalaosao, Calbayog City\r\n"));
+                    data.push(...encoder.encode(", Samar 6710\r\n"));
+                    
+                    let headerTitle = receipt && receipt.title ? receipt.title : (receipt && receipt.is_trip ? "TRIP LIQUIDATION" : "SHEYDE SARI-SARI STORE");
+                    data.push(...doubleSize);
+                    data.push(...encoder.encode(`${headerTitle}\r\n`));
                     data.push(...normalSize);
-                    data.push(...encoder.encode("Calbayog City, Samar\r\n"));
+                    
                     data.push(...encoder.encode("================================\r\n"));
                     data.push(...left);
-                    data.push(...encoder.encode(`Invoice No: ${receipt.invoice_no || 'N/A'}\r\n`));
-                    data.push(...encoder.encode(`Date: ${receipt.date || new Date().toLocaleDateString()} ${receipt.time || new Date().toLocaleTimeString()}\r\n`));
-                    data.push(...encoder.encode(`Customer: ${receipt.customer_name || 'Walk-in Customer'}\r\n`));
-                    data.push(...encoder.encode("--------------------------------\r\n"));
                     
-                    let items = (receipt && receipt.items && receipt.items.length) ? receipt.items : this.cart;
-                    if (items && items.length) {
-                        items.forEach((item, idx) => {
-                            let nameStr = (item.name || item.product_name || `Item ${idx + 1}`).substring(0, 30);
-                            let qty = item.qty || item.quantity || 1;
-                            let priceStr = `PHP ${parseFloat(item.price || 0).toFixed(2)}`;
-                            let totalStr = `PHP ${parseFloat(item.total || (qty * (item.price || 0)) || 0).toFixed(2)}`;
-                            data.push(...encoder.encode(`${nameStr}\r\n`));
-                            data.push(...encoder.encode(`  ${qty} x ${priceStr} = ${totalStr}\r\n`));
+                    let invNo = receipt && receipt.invoice_no ? receipt.invoice_no : '1063';
+                    let routeStr = receipt && receipt.route ? receipt.route : 'ROUTE 2';
+                    let dateTimeStr = receipt && receipt.date ? `${receipt.date} ${receipt.time || ''}` : `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
+                    
+                    data.push(...encoder.encode(this.formatReceiptLine(`TRIP NO: ${invNo}`, routeStr, 32) + "\r\n"));
+                    data.push(...encoder.encode(`DATE TIME: ${dateTimeStr}\r\n`));
+                    data.push(...encoder.encode("================================\r\n"));
+                    
+                    let items = (receipt && receipt.items && receipt.items.length) ? receipt.items : (this.cart || []);
+                    let itemCount = items.length > 0 ? items.reduce((sum, i) => sum + (parseInt(i.qty || i.quantity || 1)), 0) : 1;
+                    data.push(...encoder.encode(this.formatReceiptLine("OUTLET TRANSACTION", String(itemCount), 32) + "\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
+
+                    // Discount block if applicable
+                    let discountVal = receipt && receipt.discount ? parseFloat(receipt.discount) : 0;
+                    if (discountVal > 0) {
+                        data.push(...encoder.encode("DISCOUNT\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("DISCOUNT TYPE", "AMOUNT", 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine(receipt.discount_type || "WDS-5", discountVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode("--------------------------------\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("TOTAL", discountVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode("================================\r\n"));
+                    }
+
+                    // Products block
+                    data.push(...encoder.encode(this.formatReceiptLine("PRODUCTS", "TOTAL", 32) + "\r\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
+
+                    let productsSubtotal = 0;
+                    if (items.length > 0) {
+                        items.forEach(item => {
+                            let skuOrName = item.product_sku || item.sku || item.name || item.product_name || "ITEM";
+                            let qty = parseInt(item.qty || item.quantity || 1);
+                            let price = parseFloat(item.price || item.unit_price || item.wholesale_price || 0);
+                            let lineTotal = item.total ? parseFloat(item.total) : (qty * price);
+                            productsSubtotal += lineTotal;
+
+                            let label = `${skuOrName} x${qty}`;
+                            let amountStr = lineTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                            data.push(...encoder.encode(this.formatReceiptLine(label, amountStr, 32) + "\r\n"));
                         });
                     } else {
-                        data.push(...encoder.encode("  No items listed\r\n"));
+                        data.push(...encoder.encode("No items recorded\r\n"));
                     }
+
                     data.push(...encoder.encode("--------------------------------\r\n"));
-                    data.push(...encoder.encode(`TOTAL: PHP ${parseFloat(receipt.total || 0).toFixed(2)}\r\n`));
-                    data.push(...encoder.encode(`Method: ${receipt.method || 'Cash'}\r\n`));
+                    data.push(...encoder.encode(this.formatReceiptLine("TOTAL:", String(itemCount), 32) + "\r\n"));
                     data.push(...encoder.encode("================================\r\n"));
-                    data.push(...center);
-                    data.push(...encoder.encode("Thank you for your purchase!\r\n"));
-                    data.push(...encoder.encode("Please come again.\r\n"));
+
+                    // Empties section if present
+                    if (receipt && receipt.empties && receipt.empties.length > 0) {
+                        data.push(...encoder.encode(this.formatReceiptLine("EMPTIES", "TOTAL", 32) + "\r\n"));
+                        data.push(...encoder.encode("--------------------------------\r\n"));
+                        receipt.empties.forEach(emp => {
+                            data.push(...encoder.encode(`${emp.product_sku || 'ITEM'}\r\n`));
+                            let empLabel = ` ${emp.type || 'Complete Empties'} x ${emp.qty}`;
+                            let empAmt = parseFloat(emp.total || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                            data.push(...encoder.encode(this.formatReceiptLine(empLabel, empAmt, 32) + "\r\n"));
+                        });
+                        data.push(...encoder.encode("================================\r\n"));
+                    }
+
+                    // Route Totals / Summary block
+                    let grandTotal = receipt && receipt.total ? parseFloat(receipt.total) : (productsSubtotal - discountVal);
+                    let taxesVal = receipt && receipt.taxes ? parseFloat(receipt.taxes) : (grandTotal * 0.12);
+                    let emptiesVal = receipt && receipt.empties_total ? parseFloat(receipt.empties_total) : 0;
+                    let expensesVal = receipt && receipt.expenses ? parseFloat(receipt.expenses) : 0;
+
+                    data.push(...encoder.encode("ROUTE TOTALS\r\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("PRODUCTS:", productsSubtotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("DISCOUNTS:", discountVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("TAXES:", taxesVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    if (emptiesVal > 0) {
+                        data.push(...encoder.encode(this.formatReceiptLine("EMPTIES:", emptiesVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    }
+                    data.push(...encoder.encode(this.formatReceiptLine("EXPENSES:", expensesVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
+
+                    // Breakdown by payment method
+                    data.push(...encoder.encode("Breakdown by payment method\r\n"));
+                    data.push(...encoder.encode("--------------------------------\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("PAYMENT METHOD", "TOTAL AMOUNT", 32) + "\r\n"));
+                    let payMethod = (receipt && receipt.method ? receipt.method : "CASH").toUpperCase();
+                    data.push(...encoder.encode(this.formatReceiptLine(payMethod, grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode(this.formatReceiptLine("TOTAL", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
+
+                    // Agent & Cashier Signatures
+                    let agentName = (receipt && receipt.customer_name ? receipt.customer_name : (receipt && receipt.driver_name ? receipt.driver_name : "MACK GACELOS")).toUpperCase();
+                    let cashierName = (receipt && receipt.cashier_name ? receipt.cashier_name : "MARICA OLAO").toUpperCase();
+
+                    data.push(...encoder.encode("AGENT INFORMATION\r\n"));
+                    data.push(...encoder.encode(`NAME: ${agentName}\r\n`));
+                    data.push(...encoder.encode("SIGN: __________________________\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
+                    data.push(...encoder.encode("CASHIER INFORMATION\r\n"));
+                    data.push(...encoder.encode(`NAME: ${cashierName}\r\n`));
+                    data.push(...encoder.encode("SIGN: __________________________\r\n"));
+                    data.push(...encoder.encode("================================\r\n"));
                     data.push(...feed);
 
                     await this.writeToPrinter(new Uint8Array(data));
