@@ -55,13 +55,6 @@ def get_current_state():
         except Exception as e:
             print("Auto-seed error: ", e)
 
-    if Employee.objects.filter(name__icontains='Sheryl').exists():
-        from django.core.management import call_command
-        try:
-            call_command('update_branding')
-        except Exception as e:
-            print("Auto-branding error: ", e)
-
     state = {
         "categories": [serialize_model(c) for c in Category.objects.all()],
         "brands": [serialize_model(b) for b in Brand.objects.all()],

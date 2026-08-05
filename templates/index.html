@@ -1074,19 +1074,19 @@
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <h3 class="font-extrabold text-base text-white mb-4"><i class="fa-solid fa-circle-plus text-accentGreen mr-1.5"></i> Add New Product to Catalog</h3>
+            <h3 class="font-extrabold text-base text-slate-800 dark:text-white mb-4"><i class="fa-solid fa-circle-plus text-accentGreen mr-1.5"></i> Add New Product to Catalog</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">SKU (Stock Keeping Unit) *</label>
-                    <input type="text" x-model="newSku" placeholder="e.g. COKE-500ML" class="w-full glass-input rounded px-3 py-2 text-white font-mono uppercase">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">SKU (Stock Keeping Unit) *</label>
+                    <input type="text" x-model="newSku" placeholder="e.g. COKE-500ML" class="w-full glass-input rounded px-3 py-2 font-mono uppercase">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Product Name *</label>
-                    <input type="text" x-model="newName" placeholder="e.g. Coca-Cola 500ml" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Product Name *</label>
+                    <input type="text" x-model="newName" placeholder="e.g. Coca-Cola 500ml" class="w-full glass-input rounded px-3 py-2">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Category</label>
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Category</label>
                     <select x-model="newCategoryId" class="w-full glass-input rounded px-3 py-2 text-xs">
                         <option value="">Select Category</option>
                         <template x-for="cat in categories" :key="cat.id">
@@ -1095,7 +1095,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Brand</label>
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Brand</label>
                     <select x-model="newBrandId" class="w-full glass-input rounded px-3 py-2 text-xs">
                         <option value="">Select Brand</option>
                         <template x-for="b in brands" :key="b.id">
@@ -1104,7 +1104,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Supplier</label>
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Supplier</label>
                     <select x-model="newSupplierId" class="w-full glass-input rounded px-3 py-2 text-xs">
                         <option value="">Select Supplier</option>
                         <template x-for="s in suppliers" :key="s.id">
@@ -1113,29 +1113,29 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Barcode String</label>
-                    <input type="text" x-model="newBarcode" placeholder="e.g. 4800001234567" class="w-full glass-input rounded px-3 py-2 text-white font-mono">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Barcode String</label>
+                    <input type="text" x-model="newBarcode" placeholder="e.g. 4800001234567" class="w-full glass-input rounded px-3 py-2 font-mono">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Cost Price (PHP) *</label>
-                    <input type="number" step="0.01" x-model="newCostPrice" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Cost Price (PHP) *</label>
+                    <input type="number" step="0.01" x-model="newCostPrice" class="w-full glass-input rounded px-3 py-2">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Wholesale Price (PHP) *</label>
-                    <input type="number" step="0.01" x-model="newWholesalePrice" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Wholesale Price (PHP) *</label>
+                    <input type="number" step="0.01" x-model="newWholesalePrice" class="w-full glass-input rounded px-3 py-2">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Retail Price (PHP) *</label>
-                    <input type="number" step="0.01" x-model="newRetailPrice" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Retail Price (PHP) *</label>
+                    <input type="number" step="0.01" x-model="newRetailPrice" class="w-full glass-input rounded px-3 py-2">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-gray-400 font-semibold mb-1">Min Stock</label>
-                        <input type="number" x-model="newMinStock" class="w-full glass-input rounded px-3 py-2 text-white">
+                        <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Min Stock</label>
+                        <input type="number" x-model="newMinStock" class="w-full glass-input rounded px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-gray-400 font-semibold mb-1">Max Stock</label>
-                        <input type="number" x-model="newMaxStock" class="w-full glass-input rounded px-3 py-2 text-white">
+                        <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Max Stock</label>
+                        <input type="number" x-model="newMaxStock" class="w-full glass-input rounded px-3 py-2">
                     </div>
                 </div>
             </div>
@@ -1182,8 +1182,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-gray-400 font-semibold mb-1">Cases to Order (Qty) *</label>
-                        <input type="number" min="1" x-model.number="poQty" @input="recalcPOTotal()" class="w-full glass-input rounded px-3 py-2 text-white font-extrabold">
+                        <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Cases to Order (Qty) *</label>
+                        <input type="number" min="1" x-model.number="poQty" @input="recalcPOTotal()" class="w-full glass-input rounded px-3 py-2 font-extrabold">
                     </div>
                 </div>
                 
@@ -1217,11 +1217,11 @@
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <h3 class="font-extrabold text-base text-white mb-4"><i class="fa-solid fa-circle-plus text-accentGreen mr-1.5"></i> Record Operational Expense</h3>
+            <h3 class="font-extrabold text-base text-slate-800 dark:text-white mb-4"><i class="fa-solid fa-circle-plus text-accentGreen mr-1.5"></i> Record Operational Expense</h3>
             
             <div class="flex flex-col gap-4 text-xs">
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Expense Category *</label>
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Expense Category *</label>
                     <select x-model="expCategory" class="w-full glass-input rounded px-3 py-2 text-xs">
                         <option value="Utilities (Electricity/Water)">Utilities (Electricity/Water)</option>
                         <option value="Fuel / Diesel">Fuel / Diesel</option>
@@ -1232,12 +1232,12 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Description / Notes *</label>
-                    <input type="text" x-model="expDescription" placeholder="e.g. Fuel for Truck-A Elf" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Description / Notes *</label>
+                    <input type="text" x-model="expDescription" placeholder="e.g. Fuel for Truck-A Elf" class="w-full glass-input rounded px-3 py-2">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Amount (PHP) *</label>
-                    <input type="number" step="0.01" min="0.01" x-model.number="expAmount" class="w-full glass-input rounded px-3 py-2 text-white">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Amount (PHP) *</label>
+                    <input type="number" step="0.01" min="0.01" x-model.number="expAmount" class="w-full glass-input rounded px-3 py-2">
                 </div>
             </div>
             

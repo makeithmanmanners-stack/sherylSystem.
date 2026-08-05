@@ -686,18 +686,18 @@
             <button @click="showPaymentModal = false" class="absolute top-3 right-3 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <h3 class="font-extrabold text-sm text-white mb-2 pb-2 border-b border-glassBorder flex items-center gap-1.5">
+            <h3 class="font-extrabold text-sm text-slate-800 dark:text-white mb-2 pb-2 border-b border-glassBorder flex items-center gap-1.5">
                 <i class="fa-solid fa-credit-card text-accentCyan"></i> Submit GCash Payment
             </h3>
             
             <form @submit.prevent="submitCreditPayment()" class="flex flex-col gap-3.5 text-xs text-left">
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">Amount to Pay (PHP) *</label>
-                    <input type="number" step="0.01" x-model.number="payAmount" required class="w-full glass-input rounded-lg px-3 py-2 text-white font-bold">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">Amount to Pay (PHP) *</label>
+                    <input type="number" step="0.01" x-model.number="payAmount" required class="w-full glass-input rounded-lg px-3 py-2 font-bold">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-semibold mb-1">GCash Reference Number *</label>
-                    <input type="text" x-model="payRef" required placeholder="13-digit Reference #" class="w-full glass-input rounded-lg px-3 py-2 text-white font-mono">
+                    <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1">GCash Reference Number *</label>
+                    <input type="text" x-model="payRef" required placeholder="13-digit Reference #" class="w-full glass-input rounded-lg px-3 py-2 font-mono">
                 </div>
                 
                 <button type="submit" class="w-full mt-2 bg-gradient-to-r from-accentBlue to-accentCyan text-white font-black py-2 rounded-xl text-xs shadow-lg shadow-accentBlue/10 transition-all">
