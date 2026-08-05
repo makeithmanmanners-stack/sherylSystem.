@@ -241,7 +241,11 @@ def signup_view(request):
 @csrf_exempt
 def api_state(request):
     if request.method == 'GET':
-        return JsonResponse(get_current_state())
+        response = JsonResponse(get_current_state())
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
     
     elif request.method == 'POST':
         try:
