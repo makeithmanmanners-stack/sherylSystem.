@@ -1789,8 +1789,14 @@
             
             initAdmin() {
                 this.loadAdminState();
-                // Auto-sync products and data from Django Admin / DB when window gains focus or every 10 seconds
-                window.addEventListener('focus', () => this.loadAdminState());
+                this.autoConnectBluetoothPrinter();
+                window.addEventListener('focus', () => {
+                    this.loadAdminState();
+                    this.autoConnectBluetoothPrinter();
+                });
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) this.autoConnectBluetoothPrinter();
+                });
                 setInterval(() => this.loadAdminState(), 10000);
             },
             
@@ -2389,8 +2395,15 @@
                 }
             },
             
-            // Web Bluetooth printer connection & auto-connect methods
+            // Web Bluetooth printer connection & auto-connect methods (Ultra-Fast Auto Connect)
             async autoConnectBluetoothPrinter() {
+                if (window._sharedBtPrinter && window._sharedBtPrinter.connected && window._sharedBtPrinter.characteristic && window._sharedBtPrinter.device && window._sharedBtPrinter.device.gatt && window._sharedBtPrinter.device.gatt.connected) {
+                    this.btDevice = window._sharedBtPrinter.device;
+                    this.btCharacteristic = window._sharedBtPrinter.characteristic;
+                    this.btPrinterConnected = true;
+                    this.btPrinterName = window._sharedBtPrinter.printerName;
+                    return true;
+                }
                 if (this.btPrinterConnected && this.btCharacteristic && this.btDevice && this.btDevice.gatt && this.btDevice.gatt.connected) {
                     return true;
                 }
@@ -2399,57 +2412,101 @@
                         const devices = await navigator.bluetooth.getDevices();
                         if (devices && devices.length > 0) {
                             const savedId = localStorage.getItem('bt_printer_id');
+                            const savedServiceUuid = localStorage.getItem('bt_service_uuid');
+                            const savedCharUuid = localStorage.getItem('bt_char_uuid');
+
                             let device = devices[0];
                             if (savedId) {
                                 const match = devices.find(d => d.id === savedId);
                                 if (match) device = match;
                             }
-                            console.log("Auto-connecting to remembered Bluetooth printer:", device.name);
+                            console.log("Fast auto-connecting to Bluetooth printer:", device.name || "Thermal Printer");
                             const server = await device.gatt.connect();
-                            
+
+                            let service = null;
+                            let characteristic = null;
+
+                            // Fast path: use cached service and characteristic UUIDs (<100ms)
+                            if (savedServiceUuid && savedCharUuid) {
+                                try {
+                                    service = await server.getPrimaryService(savedServiceUuid);
+                                    characteristic = await service.getCharacteristic(savedCharUuid);
+                                } catch(e) {
+                                    console.log("Cached Bluetooth UUID lookup failed, trying discovery scan...");
+                                }
+                            }
+
                             const optionalServices = [
                                 "000018f0-0000-1000-8000-00805f9b34fb",
                                 "0000e7e1-0000-1000-8000-00805f9b34fb",
                                 "00004953-5343-fe5d-4b5c-8735163f435a",
-                                "00001101-0000-1000-8000-00805f9b34fb"
+                                "00001101-0000-1000-8000-00805f9b34fb",
+                                "0000ff00-0000-1000-8000-00805f9b34fb",
+                                "0000ffe0-0000-1000-8000-00805f9b34fb"
                             ];
-                            let characteristic = null;
-                            for (const uuid of optionalServices) {
-                                try {
-                                    const service = await server.getPrimaryService(uuid);
-                                    const characteristics = await service.getCharacteristics();
-                                    characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                                    if (characteristic) break;
-                                } catch(err) {}
+
+                            if (!characteristic) {
+                                for (const uuid of optionalServices) {
+                                    try {
+                                        const s = await server.getPrimaryService(uuid);
+                                        const characteristics = await s.getCharacteristics();
+                                        const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+                                        if (c) {
+                                            service = s;
+                                            characteristic = c;
+                                            break;
+                                        }
+                                    } catch(err) {}
+                                }
                             }
+
                             if (!characteristic) {
                                 try {
                                     const services = await server.getPrimaryServices();
-                                    for (const service of services) {
-                                        const characteristics = await service.getCharacteristics();
-                                        characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                                        if (characteristic) break;
+                                    for (const s of services) {
+                                        const characteristics = await s.getCharacteristics();
+                                        const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+                                        if (c) {
+                                            service = s;
+                                            characteristic = c;
+                                            break;
+                                        }
                                     }
                                 } catch(e) {}
                             }
+
                             if (characteristic) {
                                 this.btDevice = device;
                                 this.btCharacteristic = characteristic;
                                 this.btPrinterConnected = true;
                                 this.btPrinterName = device.name || "Bluetooth Printer";
+
+                                window._sharedBtPrinter = {
+                                    device: device,
+                                    server: server,
+                                    service: service,
+                                    characteristic: characteristic,
+                                    connected: true,
+                                    printerName: this.btPrinterName
+                                };
+
                                 localStorage.setItem('bt_printer_id', device.id);
-                                
+                                if (service) localStorage.setItem('bt_service_uuid', service.uuid);
+                                if (characteristic) localStorage.setItem('bt_char_uuid', characteristic.uuid);
+
                                 device.addEventListener('gattserverdisconnected', () => {
+                                    if (window._sharedBtPrinter) window._sharedBtPrinter.connected = false;
                                     this.btPrinterConnected = false;
-                                    this.autoConnectBluetoothPrinter();
+                                    console.log("Printer disconnected. Instant background reconnecting...");
+                                    setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                                 });
-                                
-                                console.log("Auto-connected to Bluetooth printer:", this.btPrinterName);
+
+                                console.log("Fast auto-connected to Bluetooth printer:", this.btPrinterName);
                                 return true;
                             }
                         }
                     } catch(e) {
-                        console.log("Auto-connect failed: ", e);
+                        console.log("Auto-connect notice: ", e);
                     }
                 }
                 return false;
@@ -2461,7 +2518,9 @@
                         "000018f0-0000-1000-8000-00805f9b34fb",
                         "0000e7e1-0000-1000-8000-00805f9b34fb",
                         "00004953-5343-fe5d-4b5c-8735163f435a",
-                        "00001101-0000-1000-8000-00805f9b34fb"
+                        "00001101-0000-1000-8000-00805f9b34fb",
+                        "0000ff00-0000-1000-8000-00805f9b34fb",
+                        "0000ffe0-0000-1000-8000-00805f9b34fb"
                     ];
                     
                     const device = await navigator.bluetooth.requestDevice({
@@ -2472,23 +2531,32 @@
                     console.log(`Connecting to Bluetooth device: ${device.name || "Unnamed"}`);
                     const server = await device.gatt.connect();
                     
+                    let service = null;
                     let characteristic = null;
                     for (const uuid of optionalServices) {
                         try {
-                            const service = await server.getPrimaryService(uuid);
-                            const characteristics = await service.getCharacteristics();
-                            characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                            if (characteristic) break;
+                            const s = await server.getPrimaryService(uuid);
+                            const characteristics = await s.getCharacteristics();
+                            const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+                            if (c) {
+                                service = s;
+                                characteristic = c;
+                                break;
+                            }
                         } catch(err) {}
                     }
                     
                     if (!characteristic) {
                         try {
                             const services = await server.getPrimaryServices();
-                            for (const service of services) {
-                                const characteristics = await service.getCharacteristics();
-                                characteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                                if (characteristic) break;
+                            for (const s of services) {
+                                const characteristics = await s.getCharacteristics();
+                                const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+                                if (c) {
+                                    service = s;
+                                    characteristic = c;
+                                    break;
+                                }
                             }
                         } catch(e) {}
                     }
@@ -2498,11 +2566,24 @@
                         this.btCharacteristic = characteristic;
                         this.btPrinterConnected = true;
                         this.btPrinterName = device.name || "Bluetooth Printer";
+
+                        window._sharedBtPrinter = {
+                            device: device,
+                            server: server,
+                            service: service,
+                            characteristic: characteristic,
+                            connected: true,
+                            printerName: this.btPrinterName
+                        };
+
                         localStorage.setItem('bt_printer_id', device.id);
-                        
+                        if (service) localStorage.setItem('bt_service_uuid', service.uuid);
+                        if (characteristic) localStorage.setItem('bt_char_uuid', characteristic.uuid);
+
                         device.addEventListener('gattserverdisconnected', () => {
+                            if (window._sharedBtPrinter) window._sharedBtPrinter.connected = false;
                             this.btPrinterConnected = false;
-                            this.autoConnectBluetoothPrinter();
+                            setTimeout(() => this.autoConnectBluetoothPrinter(), 500);
                         });
                     } else {
                         throw new Error("Could not find a valid ESC/POS write characteristic on the selected device.");
@@ -2513,15 +2594,22 @@
             },
             
             async disconnectBluetoothPrinter() {
-                if (this.btDevice && this.btDevice.gatt.connected) {
+                if (this.btDevice && this.btDevice.gatt && this.btDevice.gatt.connected) {
                     try {
                         await this.btDevice.gatt.disconnect();
                     } catch(e) {}
+                }
+                if (window._sharedBtPrinter) {
+                    window._sharedBtPrinter.connected = false;
+                    window._sharedBtPrinter.device = null;
                 }
                 this.btDevice = null;
                 this.btCharacteristic = null;
                 this.btPrinterConnected = false;
                 this.btPrinterName = '';
+                localStorage.removeItem('bt_printer_id');
+                localStorage.removeItem('bt_service_uuid');
+                localStorage.removeItem('bt_char_uuid');
             },
             
             async writeToPrinter(bytes) {
