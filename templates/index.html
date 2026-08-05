@@ -197,67 +197,17 @@
                     <div class="relative flex-grow">
                         <input type="text" 
                                x-model="posSearch" 
-                               @focus="showPOSDropdown = true"
-                               @input="showPOSDropdown = true"
                                @keydown.enter="handlePOSBarcodeEnter()" 
                                placeholder="Scan Barcode or Search Product..." 
                                class="w-full glass-input rounded-xl px-4 py-2.5 text-sm">
-                        
-                        <!-- POS Search Results Dropdown -->
-                        <div x-show="showPOSDropdown && posSearch.trim().length > 0" 
-                             class="absolute left-0 right-0 mt-2 bg-[#111827] border border-glassBorder rounded-xl shadow-2xl z-50 overflow-y-auto max-h-80 divide-y divide-glassBorder"
-                             @click.away="showPOSDropdown = false"
-                             x-transition>
-                            <template x-for="prod in filteredPOSProducts()" :key="prod.sku">
-                                <div class="p-3 hover:bg-gray-800/80 transition-colors flex items-center justify-between gap-3 cursor-pointer"
-                                     @click="selectPOSProductFromDropdown(prod)">
-                                    <!-- Thumbnail -->
-                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-950/40 border border-glassBorder shrink-0 flex items-center justify-center">
-                                        <template x-if="prod.image_url">
-                                            <img :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover">
-                                        </template>
-                                        <template x-if="!prod.image_url">
-                                            <i class="fa-solid fa-box text-gray-655 text-xs"></i>
-                                        </template>
-                                    </div>
-                                    <div class="min-w-0 flex-grow">
-                                        <div class="flex items-center gap-1.5 mb-1">
-                                            <span class="text-[9px] font-bold text-accentCyan bg-accentCyan/15 px-1.5 py-0.5 rounded uppercase" x-text="prod.category_name"></span>
-                                            <span class="text-[9px] font-semibold text-gray-500 font-mono" x-text="prod.sku"></span>
-                                        </div>
-                                        <h4 class="font-bold text-white text-xs truncate" :title="prod.name" x-text="prod.name"></h4>
-                                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-[10px] text-gray-400">
-                                            <span>Retail: <b class="text-white" x-text="'₱' + formatCurrency(prod.retail_price)"></b></span>
-                                            <span class="text-gray-700">|</span>
-                                            <span>Whole: <b class="text-accentCyan" x-text="'₱' + formatCurrency(prod.wholesale_price)"></b></span>
-                                            <span class="text-gray-700">|</span>
-                                            <span :class="prod.stock_quantity <= prod.min_stock ? 'text-red-400 font-bold' : 'text-accentGreen font-bold'" x-text="prod.stock_quantity + ' left'"></span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col gap-1 shrink-0" @click.stop>
-                                        <button @click="addPOStoCart(prod, 'retail'); showPOSDropdown = false; posSearch = '';" :disabled="prod.stock_quantity <= 0" class="px-2.5 py-1 bg-gray-850 hover:bg-gray-700 disabled:opacity-50 text-[10px] font-bold rounded-lg text-gray-200 transition-colors">
-                                            + Retail
-                                        </button>
-                                        <button @click="addPOStoCart(prod, 'wholesale'); showPOSDropdown = false; posSearch = '';" :disabled="prod.stock_quantity <= 0" class="px-2.5 py-1 bg-accentBlue hover:bg-accentBlue/80 disabled:opacity-50 text-[10px] font-bold rounded-lg text-white transition-colors">
-                                            + Case
-                                        </button>
-                                    </div>
-                                </div>
-                            </template>
-                            <template x-if="filteredPOSProducts().length === 0">
-                                <div class="p-4 text-center text-xs text-gray-500 font-sans">
-                                    No products found matching "<span x-text="posSearch"></span>"
-                                </div>
-                            </template>
-                        </div>
                     </div>
-                    <button @click="triggerBarcodeScan()" class="bg-gray-800 hover:bg-gray-700 text-white p-2.5 rounded-xl border border-glassBorder shrink-0">
+                    <button @click="triggerBarcodeScan()" class="bg-gray-800 hover:bg-gray-700 text-white p-2.5 rounded-xl border border-glassBorder shrink-0" title="Scan Barcode">
                         <i class="fa-solid fa-barcode"></i>
                     </button>
                 </div>
                 
                 <!-- POS Catalog grid -->
-                <div class="flex-grow grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 overflow-y-auto max-h-[calc(100vh-290px)] pr-2 content-start">
+                <div class="flex-grow grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 overflow-y-auto min-h-[380px] max-h-[calc(100vh-220px)] pr-2 content-start">
                     <template x-for="prod in filteredPOSProducts()" :key="prod.sku">
                         <div class="bg-gray-900/30 p-3 rounded-xl border border-glassBorder flex flex-col justify-between min-h-[260px] gap-3 hover:border-accentBlue/30 transition-all">
                             <div>
