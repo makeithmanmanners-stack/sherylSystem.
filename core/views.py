@@ -59,6 +59,46 @@ def serialize_model(model_obj):
             data[field.name] = str(val)
     return data
 
+def store_context(request):
+    store_name = "SHEYDE SARI-SARI STORE"
+    user_plan = "Guest"
+    if request and hasattr(request, 'user') and request.user.is_authenticated:
+        user = request.user
+        cust = getattr(user, 'customer_profile', None)
+        if cust and cust.name:
+            store_name = cust.name
+        else:
+            sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+            if sub and sub.name:
+                store_name = sub.name
+            else:
+                emp = getattr(user, 'employee', None)
+                if emp and emp.name:
+                    store_name = emp.name
+
+        is_admin = user.is_superuser or user.is_staff or (getattr(user, 'employee', None) and user.employee.role == 'Admin')
+        if is_admin:
+            user_plan = "Admin"
+        else:
+            sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+            if sub:
+                plan = sub.plan_name.lower()
+                if 'vip' in plan or '799' in plan:
+                    user_plan = 'VIP'
+                elif 'standard' in plan or '549' in plan:
+                    user_plan = 'Standard'
+                else:
+                    user_plan = 'Starter'
+    else:
+        latest_sub = Subscription.objects.filter(status='Approved').order_by('-approved_at').first()
+        if latest_sub and latest_sub.name:
+            store_name = latest_sub.name
+
+    return {
+        'store_name': store_name,
+        'user_plan': user_plan
+    }
+
 def get_current_state(request=None):
     if not User.objects.filter(username='Khertadmin').exists():
         try:
@@ -75,12 +115,24 @@ def get_current_state(request=None):
             print("Auto-seed error: ", e)
 
     user_plan = "Admin"
-    store_name = "Sheyde Sari-Sari Store & ERP"
+    store_name = "SHEYDE SARI-SARI STORE"
     if request and hasattr(request, 'user') and request.user.is_authenticated:
-        emp = getattr(request.user, 'employee', None)
-        is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+        user = request.user
+        cust = getattr(user, 'customer_profile', None)
+        if cust and cust.name:
+            store_name = cust.name
+        else:
+            sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+            if sub and sub.name:
+                store_name = sub.name
+            else:
+                emp = getattr(user, 'employee', None)
+                if emp and emp.name:
+                    store_name = emp.name
+
+        is_admin = user.is_superuser or user.is_staff or (getattr(user, 'employee', None) and user.employee.role == 'Admin')
         if not is_admin:
-            sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+            sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
             if sub:
                 plan = sub.plan_name.lower()
                 if 'vip' in plan or '799' in plan:
@@ -91,10 +143,6 @@ def get_current_state(request=None):
                     user_plan = 'Starter'
             else:
                 user_plan = 'Starter'
-            
-            cust = getattr(request.user, 'customer_profile', None)
-            if cust and cust.name:
-                store_name = cust.name
 
     state = {
         "user_plan": user_plan,
@@ -690,36 +738,63 @@ def api_state(request):
                     return JsonResponse({"success": True, "message": f"Subscription for {sub.name} rejected.", "state": get_current_state(request)})
 
             elif action == "update_system_settings":
+                user = request.user
+                if not user or not user.is_authenticated:
+                    return JsonResponse({"success": False, "error": "User not authenticated."})
+
+                emp = getattr(user, 'employee', None)
+                is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin')
+                sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+
+                if not is_admin and not sub:
+                    return JsonResponse({"success": False, "error": "Access Denied: Only active subscribed accounts with Admin Panel access can edit settings."})
+
                 store_name_val = data.get("store_name", "").strip()
                 email_val = data.get("email", "").strip()
                 new_password = data.get("password", "").strip()
                 
-                user = request.user
-                if user and user.is_authenticated:
-                    if email_val:
-                        user.email = email_val
-                    if new_password:
-                        user.set_password(new_password)
-                    user.save()
+                # Update specific account credentials
+                if email_val:
+                    user.email = email_val
+                if new_password:
+                    user.set_password(new_password)
+                    if sub:
+                        sub.password = new_password
+                        sub.save()
+                user.save()
 
+                if new_password:
+                    from django.contrib.auth import update_session_auth_hash
+                    update_session_auth_hash(request, user)
+
+                # Update store name for this specific account
+                if store_name_val:
                     cust = getattr(user, 'customer_profile', None)
                     if cust:
+                        cust.name = store_name_val
                         if email_val:
                             cust.email = email_val
-                        if store_name_val:
-                            cust.name = store_name_val
                         cust.save()
-                    elif store_name_val:
+                    else:
                         Customer.objects.create(user=user, name=store_name_val, email=email_val or user.email)
                     
-                    AuditLog.objects.create(
-                        user=user.username,
-                        action="Update System Settings",
-                        module="Settings",
-                        details=f"Updated Store/Account Settings: Store Name: '{store_name_val}', Email: '{email_val}', Password {'updated' if new_password else 'unchanged'}."
-                    )
-                    return JsonResponse({"success": True, "message": "System Settings & Account Profile updated successfully!", "state": get_current_state(request)})
-                return JsonResponse({"success": False, "error": "User not authenticated."})
+                    if sub:
+                        sub.name = store_name_val
+                        if email_val:
+                            sub.email = email_val
+                        sub.save()
+
+                    if emp:
+                        emp.name = store_name_val
+                        emp.save()
+
+                AuditLog.objects.create(
+                    user=user.username,
+                    action="Update System Settings",
+                    module="Settings",
+                    details=f"Updated Account & Store Settings: Store Name: '{store_name_val}', Email: '{email_val}', Password {'updated' if new_password else 'unchanged'}."
+                )
+                return JsonResponse({"success": True, "message": "System Settings, Store Name & Account Password updated successfully!", "state": get_current_state(request)})
 
             elif action == "receive_po":
                 po_no = data.get("po_no")

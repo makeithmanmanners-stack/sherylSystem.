@@ -207,8 +207,8 @@
                     <i class="fa-solid fa-store text-xl text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
-                        SHEYDE SARI-SARI STORE
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 bg-clip-text text-transparent uppercase" x-text="typeof storeName !== 'undefined' && storeName ? storeName : '{{ store_name|default:'SHEYDE SARI-SARI STORE' }}'">
+                        {{ store_name|default:"SHEYDE SARI-SARI STORE" }}
                     </h1>
                     <p class="text-xs text-slate-500 dark:text-gray-400 font-medium tracking-wide">Sari-Sari Store ERP & POS System</p>
                 </div>
