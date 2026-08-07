@@ -2,20 +2,23 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
 
 class Brand(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
 
 class Supplier(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=150)
     company_name = models.CharField(max_length=150, blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
@@ -28,6 +31,7 @@ class Supplier(models.Model):
         return self.name
 
 class Product(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     sku = models.CharField(max_length=50, primary_key=True, verbose_name="SKU")
     name = models.CharField(max_length=200)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
@@ -48,7 +52,7 @@ class Product(models.Model):
         return f"{self.name} ({self.sku})"
 
 class Customer(models.Model):
-    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='customer_profile')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='customers')
     name = models.CharField(max_length=150)
     contact = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
@@ -61,7 +65,7 @@ class Customer(models.Model):
         return self.name
 
 class Employee(models.Model):
-    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employees')
     ROLE_CHOICES = [
         ('Admin', 'Admin'),
         ('Cashier', 'Cashier'),
@@ -82,6 +86,7 @@ class Employee(models.Model):
         return f"{self.name} ({self.role})"
 
 class Sale(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     invoice_no = models.CharField(max_length=50, primary_key=True)
     date = models.DateTimeField(auto_now_add=True)
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
@@ -107,6 +112,7 @@ class SaleItem(models.Model):
         return f"{self.sale.invoice_no} - {self.product.name} ({self.qty})"
 
 class Trip(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField()
     truck_id = models.CharField(max_length=50)
     driver = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='driver_trips')
@@ -132,6 +138,7 @@ class TripItem(models.Model):
         return f"Trip {self.trip.id} - {self.product.name}"
 
 class PurchaseOrder(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     po_no = models.CharField(max_length=50, primary_key=True)
     date = models.DateTimeField(auto_now_add=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
@@ -152,6 +159,7 @@ class PurchaseItem(models.Model):
         return f"{self.purchase_order.po_no} - {self.product.name}"
 
 class Expense(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField(blank=True, null=True)

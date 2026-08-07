@@ -717,23 +717,35 @@
                         <p class="text-[11px] text-gray-400 mt-0.5">Filter active sales transactions by Day, Week, Month, or Year to track customer orders.</p>
                     </div>
 
-                    <!-- Timeframe Filter Tabs -->
-                    <div class="flex items-center gap-1.5 bg-gray-950/80 p-1.5 rounded-xl border border-glassBorder shrink-0 flex-wrap">
-                        <button @click="salesFilterPeriod = 'day'" :class="salesFilterPeriod === 'day' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-calendar-day text-[10px]"></i> Day (Today)
-                        </button>
-                        <button @click="salesFilterPeriod = 'week'" :class="salesFilterPeriod === 'week' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-calendar-week text-[10px]"></i> Week
-                        </button>
-                        <button @click="salesFilterPeriod = 'month'" :class="salesFilterPeriod === 'month' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-calendar-days text-[10px]"></i> Month
-                        </button>
-                        <button @click="salesFilterPeriod = 'year'" :class="salesFilterPeriod === 'year' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-calendar text-[10px]"></i> Year
-                        </button>
-                        <button @click="salesFilterPeriod = 'all'" :class="salesFilterPeriod === 'all' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
-                            <i class="fa-solid fa-infinity text-[10px]"></i> All Time
-                        </button>
+                    <!-- Timeframe Filter Tabs & Exporters -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex items-center gap-1.5 bg-gray-950/80 p-1.5 rounded-xl border border-glassBorder shrink-0 flex-wrap">
+                            <button @click="salesFilterPeriod = 'day'" :class="salesFilterPeriod === 'day' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-calendar-day text-[10px]"></i> Day (Today)
+                            </button>
+                            <button @click="salesFilterPeriod = 'week'" :class="salesFilterPeriod === 'week' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-calendar-week text-[10px]"></i> Week
+                            </button>
+                            <button @click="salesFilterPeriod = 'month'" :class="salesFilterPeriod === 'month' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-calendar-days text-[10px]"></i> Month
+                            </button>
+                            <button @click="salesFilterPeriod = 'year'" :class="salesFilterPeriod === 'year' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-calendar text-[10px]"></i> Year
+                            </button>
+                            <button @click="salesFilterPeriod = 'all'" :class="salesFilterPeriod === 'all' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-infinity text-[10px]"></i> All Time
+                            </button>
+                        </div>
+
+                        <!-- PDF & Excel Export Buttons -->
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button type="button" @click="exportFilteredLedgerPDF()" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 font-extrabold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 transition-all shadow-sm">
+                                <i class="fa-solid fa-file-pdf"></i> Export PDF
+                            </button>
+                            <button type="button" @click="exportFilteredLedgerExcel()" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-extrabold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 transition-all shadow-sm">
+                                <i class="fa-solid fa-file-excel"></i> Export Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -877,6 +889,9 @@
                     </div>
                     
                     <div class="flex items-center gap-2">
+                        <button type="button" @click="showCategoryModal = true" class="px-3 py-1.5 bg-accentCyan/20 hover:bg-accentCyan/30 border border-accentCyan/30 text-accentCyan font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-tags"></i> Categories
+                        </button>
                         <a :href="subTab === 'pos' ? '/api/export/excel/?type=po' : '/api/export/excel/?type=inventory'" target="_blank" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                             <i class="fa-solid fa-file-excel text-emerald-400"></i> Export Excel
                         </a>
@@ -1162,6 +1177,60 @@
                 </button>
                 <button @click="submitAddProduct()" class="bg-accentGreen hover:bg-accentGreen/80 text-gray-950 font-bold py-2 px-5 rounded-xl text-xs transition-colors shadow-lg shadow-accentGreen/20 flex items-center gap-1.5">
                     <i class="fa-solid fa-floppy-disk"></i> Save Product
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Manage Product Categories -->
+    <div x-show="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
+        <div class="glass-card max-w-lg w-full p-6 relative border border-accentCyan/30 animate-fadeIn">
+            <button @click="showCategoryModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 class="font-extrabold text-base text-white mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-tags text-accentCyan"></i> Product Categories Management
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Create, view, and manage product category tags for your store catalog.</p>
+            
+            <!-- Create Category Form -->
+            <div class="bg-gray-900/70 p-3.5 rounded-xl border border-glassBorder flex flex-col gap-3 mb-4">
+                <span class="text-[11px] font-bold text-white uppercase tracking-wider">Add New Product Category</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="text" x-model="newCategoryName" placeholder="Category Name (e.g. Beverages)" class="glass-input rounded-lg px-3 py-2 text-xs">
+                    <input type="text" x-model="newCategoryDesc" placeholder="Description (Optional)" class="glass-input rounded-lg px-3 py-2 text-xs">
+                </div>
+                <button type="button" @click="createCategory()" :disabled="!newCategoryName" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan text-white font-bold py-2 rounded-lg text-xs shadow hover:brightness-110 disabled:opacity-40 disabled:pointer-events-none transition-all">
+                    + Save Category
+                </button>
+            </div>
+
+            <!-- Existing Categories List -->
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Existing Product Categories</span>
+            <div class="overflow-y-auto max-h-[220px] flex flex-col gap-2 pr-1">
+                <template x-for="cat in categories" :key="cat.id">
+                    <div class="bg-gray-900/50 p-2.5 rounded-xl border border-glassBorder flex items-center justify-between text-xs">
+                        <div>
+                            <span class="font-bold text-white block" x-text="cat.name"></span>
+                            <span class="text-[10px] text-gray-400 block" x-text="cat.description || 'No description'"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-accentCyan bg-accentCyan/10 px-2 py-0.5 rounded" x-text="products.filter(p => String(p.category_id || p.category) === String(cat.id)).length + ' items'"></span>
+                            <button type="button" @click="deleteCategory(cat.id)" class="text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 p-1.5 rounded-lg transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="categories.length === 0">
+                    <div class="p-6 text-center text-gray-500 text-xs">No categories added yet.</div>
+                </template>
+            </div>
+
+            <div class="flex justify-end mt-4 pt-3 border-t border-glassBorder">
+                <button type="button" @click="showCategoryModal = false" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors">
+                    Close
                 </button>
             </div>
         </div>
@@ -1702,6 +1771,11 @@
             newImageUrl: '',
             imagePreview: '',
 
+            // Category state
+            showCategoryModal: false,
+            newCategoryName: '',
+            newCategoryDesc: '',
+
             // Edit Product state
             showEditProductModal: false,
             editProductObj: {},
@@ -1989,6 +2063,162 @@
             filteredLedgerTotal() {
                 let salesList = this.filteredLedgerSales();
                 return salesList.reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
+            },
+
+            exportFilteredLedgerPDF() {
+                let salesList = this.filteredLedgerSales();
+                let periodText = this.salesFilterPeriod === 'day' ? 'Today (Day)' : this.salesFilterPeriod === 'week' ? 'This Week' : this.salesFilterPeriod === 'month' ? 'This Month' : this.salesFilterPeriod === 'year' ? 'This Year' : 'All Time';
+                
+                let printWin = window.open('', '_blank');
+                let rowsHtml = salesList.map(s => `
+                    <tr>
+                        <td style="padding:6px;border:1px solid #ccc;font-family:monospace;">${s.invoice_no}</td>
+                        <td style="padding:6px;border:1px solid #ccc;font-family:monospace;">${s.date ? s.date.replace('T', ' ').slice(0, 16) : ''}</td>
+                        <td style="padding:6px;border:1px solid #ccc;font-weight:bold;">${s.customer_name || 'Walk-in Customer'}</td>
+                        <td style="padding:6px;border:1px solid #ccc;">${s.method || 'Cash'}</td>
+                        <td style="padding:6px;border:1px solid #ccc;text-align:right;font-weight:bold;">₱${this.formatCurrency(s.total)}</td>
+                        <td style="padding:6px;border:1px solid #ccc;text-align:center;">${s.status}</td>
+                    </tr>
+                `).join('');
+
+                let totalVol = this.filteredLedgerTotal();
+
+                printWin.document.write(`
+                    <html>
+                    <head>
+                        <title>Recent Sales & Customer Orders Ledger - ${periodText}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+                            h2 { margin-bottom: 4px; color: #0284c7; }
+                            p { margin-top: 0; font-size: 12px; color: #555; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                            th { background: #0f172a; color: white; padding: 8px; border: 1px solid #0f172a; text-align: left; }
+                            .total-row { font-weight: bold; background: #e2e8f0; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Recent Sales & Customer Orders Ledger</h2>
+                        <p>Store: ${this.storeName} | Filter Period: <b>${periodText}</b> | Generated: ${new Date().toLocaleString()}</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Date & Time</th>
+                                    <th>Customer / Store</th>
+                                    <th>Method</th>
+                                    <th style="text-align:right;">Total Amount</th>
+                                    <th style="text-align:center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml.length > 0 ? rowsHtml : '<tr><td colspan="6" style="padding:15px;text-align:center;">No transaction records found for this period.</td></tr>'}
+                                <tr class="total-row">
+                                    <td colspan="4" style="padding:8px;border:1px solid #ccc;text-align:right;">TOTAL SALES VOLUME:</td>
+                                    <td style="padding:8px;border:1px solid #ccc;text-align:right;">₱${this.formatCurrency(totalVol)}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <script>
+                            window.onload = function() { window.print(); }
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWin.document.close();
+            },
+
+            exportFilteredLedgerExcel() {
+                let salesList = this.filteredLedgerSales();
+                let periodText = this.salesFilterPeriod === 'day' ? 'Today' : this.salesFilterPeriod === 'week' ? 'Week' : this.salesFilterPeriod === 'month' ? 'Month' : this.salesFilterPeriod === 'year' ? 'Year' : 'All_Time';
+                
+                let csvRows = [];
+                csvRows.push(["Invoice No", "Date", "Customer / Store", "Payment Method", "Subtotal", "Tax", "Grand Total", "Status", "Items Summary"]);
+                
+                salesList.forEach(s => {
+                    let itemsSummary = (s.items || []).map(i => `${i.product_name || i.product_sku} (x${i.qty})`).join(" ; ");
+                    csvRows.push([
+                        `"${s.invoice_no}"`,
+                        `"${s.date ? s.date.replace('T', ' ').slice(0, 16) : ''}"`,
+                        `"${(s.customer_name || 'Walk-in Customer').replace(/"/g, '""')}"`,
+                        `"${s.method || 'Cash'}"`,
+                        s.subtotal || 0,
+                        s.tax || 0,
+                        s.total || 0,
+                        `"${s.status}"`,
+                        `"${itemsSummary.replace(/"/g, '""')}"`
+                    ]);
+                });
+
+                let csvString = csvRows.map(e => e.join(",")).join("\n");
+                let blob = new Blob(["\ufeff" + csvString], { type: 'text/csv;charset=utf-8;' });
+                let url = URL.createObjectURL(blob);
+                let link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Customer_Orders_Ledger_${periodText}_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+
+            async createCategory() {
+                if (!this.newCategoryName) {
+                    alert("Please enter a category name.");
+                    return;
+                }
+                try {
+                    let res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            action: 'create_category',
+                            name: this.newCategoryName,
+                            description: this.newCategoryDesc || ''
+                        })
+                    });
+                    let data = await res.json();
+                    if (data.success) {
+                        this.newCategoryName = '';
+                        this.newCategoryDesc = '';
+                        if (data.state && data.state.categories) {
+                            this.categories = data.state.categories;
+                        } else {
+                            this.loadAdminState();
+                        }
+                        alert("✅ Product Category created successfully!");
+                    } else {
+                        alert("Error: " + (data.error || "Could not create category"));
+                    }
+                } catch(e) {
+                    console.error("Error creating category: ", e);
+                }
+            },
+
+            async deleteCategory(catId) {
+                if (!confirm("Are you sure you want to delete this category?")) return;
+                try {
+                    let res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            action: 'delete_category',
+                            category_id: catId
+                        })
+                    });
+                    let data = await res.json();
+                    if (data.success) {
+                        if (data.state && data.state.categories) {
+                            this.categories = data.state.categories;
+                        } else {
+                            this.loadAdminState();
+                        }
+                        alert("✅ Category deleted successfully!");
+                    } else {
+                        alert("Error: " + (data.error || "Could not delete category"));
+                    }
+                } catch(e) {
+                    console.error("Error deleting category: ", e);
+                }
             },
             
             criticalProductsCount() {

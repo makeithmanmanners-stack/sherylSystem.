@@ -149,22 +149,48 @@ def get_current_state(request=None):
             else:
                 user_plan = 'Starter'
 
+    curr_user = request.user if (request and hasattr(request, 'user') and request.user.is_authenticated) else None
+    is_super = curr_user and (curr_user.is_superuser or curr_user.username.lower() == 'khertadmin')
+
+    if curr_user and not is_super:
+        cat_qs = Category.objects.filter(Q(user=curr_user) | Q(user__isnull=True))
+        brand_qs = Brand.objects.filter(Q(user=curr_user) | Q(user__isnull=True))
+        supp_qs = Supplier.objects.filter(Q(user=curr_user) | Q(user__isnull=True))
+        cust_qs = Customer.objects.filter(Q(user=curr_user) | Q(user__isnull=True))
+        emp_qs = Employee.objects.filter(Q(user=curr_user) | Q(user__isnull=True))
+        prod_qs = Product.objects.filter(user=curr_user)
+        sale_qs = Sale.objects.filter(user=curr_user).order_by('-date')
+        trip_qs = Trip.objects.filter(user=curr_user).order_by('-date')
+        po_qs = PurchaseOrder.objects.filter(user=curr_user).order_by('-date')
+        exp_qs = Expense.objects.filter(user=curr_user).order_by('-date')
+    else:
+        cat_qs = Category.objects.all()
+        brand_qs = Brand.objects.all()
+        supp_qs = Supplier.objects.all()
+        cust_qs = Customer.objects.all()
+        emp_qs = Employee.objects.all()
+        prod_qs = Product.objects.all()
+        sale_qs = Sale.objects.order_by('-date')
+        trip_qs = Trip.objects.order_by('-date')
+        po_qs = PurchaseOrder.objects.order_by('-date')
+        exp_qs = Expense.objects.order_by('-date')
+
     state = {
         "user_plan": user_plan,
         "store_name": store_name,
-        "categories": [serialize_model(c) for c in Category.objects.all()],
-        "brands": [serialize_model(b) for b in Brand.objects.all()],
-        "suppliers": [serialize_model(s) for s in Supplier.objects.all()],
-        "customers": [serialize_model(c) for c in Customer.objects.all()],
-        "employees": [serialize_model(e) for e in Employee.objects.all()],
-        "expenses": [serialize_model(e) for e in Expense.objects.all()],
+        "categories": [serialize_model(c) for c in cat_qs],
+        "brands": [serialize_model(b) for b in brand_qs],
+        "suppliers": [serialize_model(s) for s in supp_qs],
+        "customers": [serialize_model(c) for c in cust_qs],
+        "employees": [serialize_model(e) for e in emp_qs],
+        "expenses": [serialize_model(e) for e in exp_qs],
         "subscriptions": [serialize_model(s) for s in Subscription.objects.order_by('-created_at')],
         "audit_logs": [serialize_model(a) for a in AuditLog.objects.order_by('-timestamp')[:50]],
     }
     
     # Products
     products = []
-    for p in Product.objects.all():
+    for p in prod_qs:
         p_data = serialize_model(p)
         p_data["category_id"] = p.category.id if p.category else None
         p_data["category_name"] = p.category.name if p.category else ""
@@ -177,7 +203,7 @@ def get_current_state(request=None):
 
     # Sales
     sales = []
-    for s in Sale.objects.order_by('-date'):
+    for s in sale_qs:
         s_data = serialize_model(s)
         s_data["customer_id"] = s.customer.id if s.customer else None
         s_data["customer_name"] = s.customer.name if s.customer else "Walk-in"
@@ -197,7 +223,7 @@ def get_current_state(request=None):
 
     # Trips
     trips = []
-    for t in Trip.objects.order_by('-date'):
+    for t in trip_qs:
         t_data = serialize_model(t)
         t_data["driver_name"] = t.driver.name if t.driver else "N/A"
         t_data["helper_name"] = t.helper.name if t.helper else "N/A"
@@ -216,7 +242,7 @@ def get_current_state(request=None):
 
     # Purchase Orders
     pos = []
-    for po in PurchaseOrder.objects.order_by('-date'):
+    for po in po_qs:
         po_data = serialize_model(po)
         po_data["supplier_name"] = po.supplier.name if po.supplier else "N/A"
         po_data["items"] = [
@@ -230,6 +256,7 @@ def get_current_state(request=None):
             for item in po.items.all()
         ]
         pos.append(po_data)
+    state["purchase_orders"] = pos
     state["purchase_orders"] = pos
 
     return state
@@ -450,6 +477,7 @@ def api_state(request):
                 salesman = Employee.objects.filter(id=emp_id).first() if emp_id else None
                 
                 sale = Sale.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
                     invoice_no=invoice_no,
                     customer=customer,
                     salesman=salesman,
@@ -901,6 +929,36 @@ def api_state(request):
                     details=f"Recorded expense under '{cat}' worth PHP {amt:.2f}."
                 )
 
+            elif action == "create_category":
+                cat_name = str(data.get("name", "")).strip()
+                desc = str(data.get("description", "")).strip()
+                if not cat_name:
+                    return JsonResponse({"success": False, "error": "Category name is required."})
+                
+                Category.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    name=cat_name,
+                    description=desc
+                )
+                AuditLog.objects.create(
+                    user=request.user.username if request.user.is_authenticated else "system",
+                    action="Create Category",
+                    module="Products",
+                    details=f"Created product category '{cat_name}'."
+                )
+                return JsonResponse({"success": True, "message": f"Category '{cat_name}' created successfully!", "state": get_current_state(request)})
+
+            elif action == "delete_category":
+                cat_id = data.get("category_id")
+                Category.objects.filter(id=cat_id).delete()
+                AuditLog.objects.create(
+                    user=request.user.username if request.user.is_authenticated else "system",
+                    action="Delete Category",
+                    module="Products",
+                    details=f"Deleted product category ID {cat_id}."
+                )
+                return JsonResponse({"success": True, "message": "Category deleted successfully!", "state": get_current_state(request)})
+
             elif action == "create_product":
                 sku = str(data.get("sku", "")).strip()
                 name = str(data.get("name", "")).strip()
@@ -931,6 +989,7 @@ def api_state(request):
                 image_url_val = data.get("image_url", "").strip() if isinstance(data.get("image_url"), str) else ""
 
                 new_product = Product.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
                     sku=sku,
                     name=name,
                     brand=brand,
