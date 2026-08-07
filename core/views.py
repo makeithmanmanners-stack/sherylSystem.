@@ -251,6 +251,12 @@ def store(request):
 
 def login_view(request):
     if request.user.is_authenticated:
+        emp = getattr(request.user, 'employee', None)
+        is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+        if is_admin or sub:
+            return redirect('admin_portal')
+            
         cust = getattr(request.user, 'customer_profile', None)
         if cust:
             return redirect('customer_portal')
@@ -278,6 +284,10 @@ def login_view(request):
                     return render(request, 'login.html', {'error_message': error_message})
 
             login(request, user)
+            sub = Subscription.objects.filter(Q(user=user) | Q(username=username), status='Approved').first()
+            if is_admin or sub:
+                return redirect('admin_portal')
+                
             cust = getattr(user, 'customer_profile', None)
             if cust:
                 return redirect('customer_portal')
@@ -297,10 +307,14 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def customer_portal(request):
+    emp = getattr(request.user, 'employee', None)
+    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+    sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+    if is_admin or sub:
+        return redirect('admin_portal')
+
     cust = getattr(request.user, 'customer_profile', None)
     if not cust:
-        if request.user.is_superuser:
-            return redirect('admin_portal')
         return HttpResponse("You are not registered as a customer in the system.", status=403)
         
     return render(request, 'customer_portal.html', {'customer': cust})
@@ -769,15 +783,6 @@ def api_state(request):
 
                 # Update store name for this specific account
                 if store_name_val:
-                    cust = getattr(user, 'customer_profile', None)
-                    if cust:
-                        cust.name = store_name_val
-                        if email_val:
-                            cust.email = email_val
-                        cust.save()
-                    else:
-                        Customer.objects.create(user=user, name=store_name_val, email=email_val or user.email)
-                    
                     if sub:
                         sub.name = store_name_val
                         if email_val:
@@ -787,6 +792,19 @@ def api_state(request):
                     if emp:
                         emp.name = store_name_val
                         emp.save()
+
+                    cust = getattr(user, 'customer_profile', None)
+                    if cust:
+                        if is_admin:
+                            cust.user = None
+                            cust.save()
+                        else:
+                            cust.name = store_name_val
+                            if email_val:
+                                cust.email = email_val
+                            cust.save()
+                    elif not is_admin:
+                        Customer.objects.create(user=user, name=store_name_val, email=email_val or user.email)
 
                 AuditLog.objects.create(
                     user=user.username,
