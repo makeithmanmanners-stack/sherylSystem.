@@ -108,16 +108,7 @@
             </div>
         </div>
 
-        <!-- Floating Mobile Bluetooth Quick Action Button -->
-        <div class="md:hidden fixed bottom-5 right-5 z-50">
-            <button type="button" @click="btPrinterConnected ? printBluetoothTestPage() : connectBluetoothPrinter()" 
-                    :class="btPrinterConnected ? 'bg-accentGreen text-white shadow-accentGreen/40' : 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-accentBlue/50 animate-bounce'" 
-                    class="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl font-bold active:scale-95 transition-all border-2 border-white/20 cursor-pointer select-none"
-                    style="touch-action: manipulation;"
-                    :title="btPrinterConnected ? 'Thermal Printer Connected' : 'Tap to Connect Bluetooth Thermal Printer'">
-                <i class="fa-solid" :class="btPrinterConnected ? 'fa-print' : 'fa-bluetooth'"></i>
-            </button>
-        </div>
+        <!-- Mobile Sticky Bluetooth Printer Header Bar (Visible on mobile screens) -->
         
         <!-- DASHBOARD MODULE -->
         <div x-show="activeTab === 'dashboard'" class="flex flex-col gap-4 animate-fadeIn">
