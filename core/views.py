@@ -89,11 +89,6 @@ def store_context(request):
                     user_plan = 'Standard'
                 else:
                     user_plan = 'Starter'
-    else:
-        latest_sub = Subscription.objects.filter(status='Approved').order_by('-approved_at').first()
-        if latest_sub and latest_sub.name:
-            store_name = latest_sub.name
-
     return {
         'store_name': store_name,
         'user_plan': user_plan
