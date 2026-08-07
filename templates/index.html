@@ -537,224 +537,122 @@
             </div>
         </div>
 
-        <!-- TRIPS LOGISTICS MODULE -->
-        <div x-show="activeTab === 'trips'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn">
-            <div class="flex justify-between items-center pb-3 border-b border-glassBorder">
+        <!-- SUBSCRIPTIONS & GCASH PAYMENT APPROVALS MODULE -->
+        <div x-show="activeTab === 'subscriptions'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn" x-data="{ subFilter: 'All' }">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-glassBorder">
                 <div>
-                    <h3 class="font-extrabold text-base text-white">Trips Logistics & Truck Delivery</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Dispatch trucks to routes and automatically reconcile returns and cash collection.</p>
+                    <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-signature text-accentCyan"></i> GCash Subscriptions & Payment Approvals
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Suriin ang mga GCash payment submissions (09366939816). I-approve para ma-grant ang website login access o i-reject kapag invalid.</p>
                 </div>
-                
-                <button @click="openCreateTripModal()" class="bg-accentBlue hover:bg-accentBlue/80 text-white font-bold py-2 px-4 rounded-xl text-xs transition-all flex items-center gap-1.5">
-                    <i class="fa-solid fa-truck-plus"></i> Create Dispatch Trip
-                </button>
+                <div class="flex gap-2">
+                    <button @click="subFilter = 'All'" :class="subFilter === 'All' ? 'bg-accentBlue text-white' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        Lahat
+                    </button>
+                    <button @click="subFilter = 'Pending'" :class="subFilter === 'Pending' ? 'bg-yellow-500 text-gray-950 font-black' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                        <span>Pending</span>
+                        <span class="bg-gray-950/40 text-yellow-300 text-[10px] px-1.5 py-0.2 rounded-full" x-text="subscriptions.filter(s => s.status === 'Pending').length"></span>
+                    </button>
+                    <button @click="subFilter = 'Approved'" :class="subFilter === 'Approved' ? 'bg-accentGreen text-gray-950 font-black' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        Approved
+                    </button>
+                    <button @click="subFilter = 'Rejected'" :class="subFilter === 'Rejected' ? 'bg-red-500 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                        Rejected
+                    </button>
+                </div>
             </div>
-            
-            <!-- Trips List -->
-            <div class="overflow-x-auto">
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-900/60 p-4 rounded-xl border border-glassBorder flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase">Pending Approvals</span>
+                        <h4 class="text-xl font-extrabold text-yellow-400" x-text="subscriptions.filter(s => s.status === 'Pending').length"></h4>
+                    </div>
+                    <i class="fa-solid fa-clock-rotate-left text-yellow-400/50 text-2xl"></i>
+                </div>
+                <div class="bg-gray-900/60 p-4 rounded-xl border border-glassBorder flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase">Total Approved Users</span>
+                        <h4 class="text-xl font-extrabold text-accentGreen" x-text="subscriptions.filter(s => s.status === 'Approved').length"></h4>
+                    </div>
+                    <i class="fa-solid fa-user-check text-accentGreen/50 text-2xl"></i>
+                </div>
+                <div class="bg-gray-900/60 p-4 rounded-xl border border-glassBorder flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase">Total Subscription Revenue</span>
+                        <h4 class="text-xl font-extrabold text-accentCyan" x-text="'₱' + formatCurrency(subscriptions.filter(s => s.status === 'Approved').reduce((acc, s) => acc + parseFloat(s.amount), 0))"></h4>
+                    </div>
+                    <i class="fa-solid fa-sack-dollar text-accentCyan/50 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Subscriptions Table -->
+            <div class="overflow-x-auto border border-glassBorder rounded-xl bg-gray-900/20">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="border-b border-glassBorder text-gray-400 uppercase tracking-wider">
-                            <th class="p-3">Trip ID</th>
-                            <th class="p-3">Date</th>
-                            <th class="p-3">Truck ID</th>
-                            <th class="p-3">Route / Path</th>
-                            <th class="p-3">Driver / Helper</th>
-                            <th class="p-3">Predicted Cash</th>
-                            <th class="p-3">Collected Cash</th>
+                        <tr class="border-b border-glassBorder bg-gray-950/60 text-gray-400 uppercase tracking-wider">
+                            <th class="p-3">Subscriber Name</th>
+                            <th class="p-3">Email & Username</th>
+                            <th class="p-3">Plan Tiers</th>
+                            <th class="p-3">Amount</th>
+                            <th class="p-3">GCash Ref #</th>
+                            <th class="p-3">Submitted Date</th>
                             <th class="p-3">Status</th>
-                            <th class="p-3 text-right">Actions</th>
+                            <th class="p-3 text-right">Admin Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="trip in trips" :key="trip.id">
-                            <tr class="border-b border-glassBorder/40 hover:bg-gray-900/20">
-                                <td class="p-3 font-mono font-bold text-gray-400" x-text="'TRP-' + trip.id"></td>
-                                <td class="p-3 text-gray-300" x-text="trip.date"></td>
-                                <td class="p-3 text-white font-bold" x-text="trip.truck_id"></td>
-                                <td class="p-3 text-gray-400" x-text="trip.route"></td>
-                                <td class="p-3 text-gray-350" x-text="trip.driver_name + ' / ' + trip.helper_name"></td>
-                                <td class="p-3 text-white" x-text="'₱' + formatCurrency(trip.cash_predicted)"></td>
-                                <td class="p-3 text-accentGreen font-bold" x-text="'₱' + formatCurrency(trip.cash_collected)"></td>
+                        <template x-for="sub in subscriptions.filter(s => subFilter === 'All' || s.status === subFilter)" :key="sub.id">
+                            <tr class="border-b border-glassBorder/40 hover:bg-gray-900/40 transition-colors">
+                                <td class="p-3 font-bold text-white" x-text="sub.name"></td>
                                 <td class="p-3">
-                                    <span :class="trip.status === 'Completed' ? 'bg-accentGreen/10 text-accentGreen' : trip.status === 'Dispatched' ? 'bg-accentCyan/10 text-accentCyan' : 'bg-gray-800 text-gray-450'" class="px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px]" x-text="trip.status"></span>
+                                    <span class="font-bold text-accentCyan block" x-text="sub.username"></span>
+                                    <span class="text-[11px] text-gray-400 block" x-text="sub.email"></span>
+                                </td>
+                                <td class="p-3">
+                                    <span class="px-2 py-0.5 rounded font-extrabold bg-blue-500/10 text-accentCyan border border-blue-500/20 text-[10px]" x-text="sub.plan_name"></span>
+                                </td>
+                                <td class="p-3 font-black text-white" x-text="'₱' + formatCurrency(sub.amount)"></td>
+                                <td class="p-3 font-mono font-bold text-yellow-300 tracking-wider" x-text="sub.gcash_reference"></td>
+                                <td class="p-3 text-gray-400" x-text="sub.created_at ? sub.created_at.slice(0, 16).replace('T', ' ') : 'N/A'"></td>
+                                <td class="p-3">
+                                    <span :class="{
+                                        'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30': sub.status === 'Pending',
+                                        'bg-accentGreen/10 text-accentGreen border border-accentGreen/30': sub.status === 'Approved',
+                                        'bg-red-500/10 text-red-400 border border-red-500/30': sub.status === 'Rejected'
+                                    }" class="px-2 py-0.5 rounded font-black text-[9px] uppercase" x-text="sub.status"></span>
                                 </td>
                                 <td class="p-3 text-right">
-                                    <template x-if="trip.status === 'Pending'">
-                                        <button @click="dispatchTrip(trip.id)" class="bg-accentCyan hover:brightness-110 text-gray-950 font-bold px-3 py-1 rounded text-[10px]">
-                                            Dispatch
-                                        </button>
+                                    <template x-if="sub.status === 'Pending'">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <button @click="approveSubscription(sub.id)" class="bg-accentGreen hover:bg-accentGreen/80 text-gray-950 font-black px-3 py-1 rounded text-[10px] shadow transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </button>
+                                            <button @click="rejectSubscription(sub.id)" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all">
+                                                Reject
+                                            </button>
+                                        </div>
                                     </template>
-                                    <template x-if="trip.status === 'Dispatched'">
-                                        <button @click="openReconcileModal(trip)" class="bg-accentGreen hover:brightness-110 text-white font-bold px-3 py-1 rounded text-[10px]">
-                                            Reconcile Trip
-                                        </button>
+                                    <template x-if="sub.status === 'Approved'">
+                                        <span class="text-[10px] text-accentGreen font-bold flex items-center justify-end gap-1">
+                                            <i class="fa-solid fa-circle-check"></i> User Active
+                                        </span>
+                                    </template>
+                                    <template x-if="sub.status === 'Rejected'">
+                                        <span class="text-[10px] text-red-400 font-bold" x-text="sub.admin_notes || 'Rejected'"></span>
                                     </template>
                                 </td>
+                            </tr>
+                        </template>
+                        <template x-if="subscriptions.filter(s => subFilter === 'All' || s.status === subFilter).length === 0">
+                            <tr>
+                                <td colspan="8" class="p-6 text-center text-gray-500">Walang nahanap na subscription records sa kategoryang ito.</td>
                             </tr>
                         </template>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- CASHIER CREDITS MODULE -->
-        <div x-show="activeTab === 'cashier'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn">
-            <div class="pb-3 border-b border-glassBorder">
-                <h3 class="font-extrabold text-base text-white">Accounts Credit Ledger & Deposit Verification</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Collect client payments for outstanding credit limits, and verify bank deposits.</p>
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <!-- Customer Credits Table -->
-                <div class="border border-glassBorder p-4 rounded-xl bg-gray-900/20">
-                    <h4 class="font-bold text-xs text-accentCyan uppercase mb-3"><i class="fa-solid fa-credit-card mr-1"></i> Customer Outstanding Credit Limits</h4>
-                    <div class="overflow-y-auto max-h-[300px] flex flex-col gap-2">
-                        <template x-for="c in customers" :key="c.id">
-                            <div class="bg-gray-900/60 p-3 rounded-lg border border-glassBorder flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-white block" x-text="c.name"></span>
-                                    <span class="text-gray-550 block mt-0.5">Limit: ₱<span x-text="formatCurrency(c.credit_limit)"></span></span>
-                                </div>
-                                <div class="text-right flex items-center gap-4">
-                                    <div>
-                                        <span class="text-[9px] font-bold text-gray-500 block uppercase">Outstanding Balance</span>
-                                        <span class="font-black text-sm text-red-400" x-text="'₱' + formatCurrency(c.credit_balance)"></span>
-                                    </div>
-                                    <button @click="openCreditPaymentModal(c)" :disabled="c.credit_balance <= 0" class="bg-accentBlue hover:bg-accentBlue/80 text-white font-bold py-1 px-2.5 rounded text-[10px] disabled:opacity-40">
-                                        Pay
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                
-                <!-- Deposit Slips Verification Form -->
-                <div class="border border-glassBorder p-5 rounded-xl bg-gray-900/20 flex flex-col justify-between">
-                    <div>
-                        <h4 class="font-bold text-xs text-accentGreen uppercase mb-3"><i class="fa-solid fa-building-columns mr-1"></i> Record Bank Deposit Slip</h4>
-                        <div class="flex flex-col gap-3 text-xs mb-4">
-                            <div>
-                                <label class="block text-gray-400 font-semibold mb-1">Select Receiving Bank</label>
-                                <select x-model="depositBank" class="w-full glass-input rounded-lg px-3 py-2 text-xs">
-                                    <option value="BDO Unibank">BDO Unibank (Acct: *4829)</option>
-                                    <option value="Bank of the Philippine Islands (BPI)">BPI (Acct: *9283)</option>
-                                    <option value="Metrobank">Metrobank (Acct: *1123)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-gray-400 font-semibold mb-1">Amount Deposited</label>
-                                    <input type="number" x-model.number="depositAmount" class="w-full bg-gray-950 border border-glassBorder rounded p-2 focus:outline-none focus:border-accentBlue text-white font-bold">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-400 font-semibold mb-1">Reference Number</label>
-                                    <input type="text" x-model="depositRef" placeholder="TXN-92839281" class="w-full bg-gray-950 border border-glassBorder rounded p-2 focus:outline-none focus:border-accentBlue text-white font-bold font-mono">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button @click="verifyDepositSlip()" :disabled="!depositAmount || !depositRef" class="w-full bg-gradient-to-r from-accentGreen to-emerald-500 text-white font-black py-2.5 rounded-xl text-xs hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all">
-                        <i class="fa-solid fa-clipboard-check"></i> Verify & Sync Deposit
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- HR, PAYROLL & EXPENSES MODULE -->
-        <div x-show="activeTab === 'payroll'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn" x-data="{ payrollSubTab: 'payroll' }">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-glassBorder">
-                <div>
-                    <h3 class="font-extrabold text-base text-white">HR Payroll & Operational Expenses</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Manage staff salary payouts, record cash outflows, and audit utility/fuel expenses.</p>
-                </div>
-                <div class="flex gap-2">
-                    <button @click="payrollSubTab = 'payroll'" :class="payrollSubTab === 'payroll' ? 'bg-accentBlue text-white' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">
-                        Staff Payroll
-                    </button>
-                    <button @click="payrollSubTab = 'expenses'" :class="payrollSubTab === 'expenses' ? 'bg-accentBlue text-white' : 'bg-gray-800 text-gray-400 hover:text-white'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">
-                        Operating Expenses
-                    </button>
-                </div>
-            </div>
-
-            <!-- SubTab: Payroll -->
-            <div x-show="payrollSubTab === 'payroll'" class="flex flex-col gap-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-400 font-bold">Automated payroll engine with commission incentives</span>
-                    <button @click="releaseSalaries()" class="bg-accentBlue hover:bg-accentBlue/80 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors">
-                        <i class="fa-solid fa-hand-holding-dollar"></i> Release Salaries
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-glassBorder text-gray-400 uppercase tracking-wider">
-                                <th class="p-3">Employee Name</th>
-                                <th class="p-3">Role</th>
-                                <th class="p-3">Base Salary</th>
-                                <th class="p-3">Incentives / Commission</th>
-                                <th class="p-3 text-right">Net Payout Prediction</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="emp in employees" :key="emp.id">
-                                <tr class="border-b border-glassBorder/40 hover:bg-gray-900/20">
-                                    <td class="p-3 text-white font-bold" x-text="emp.name"></td>
-                                    <td class="p-3 text-gray-400" x-text="emp.role"></td>
-                                    <td class="p-3 text-gray-300" x-text="'₱' + formatCurrency(emp.base_salary)"></td>
-                                    <td class="p-3 text-accentCyan font-bold" x-text="'₱' + formatCurrency(emp.incentives)"></td>
-                                    <td class="p-3 text-right font-black text-accentGreen" x-text="'₱' + formatCurrency(parseFloat(emp.base_salary) + parseFloat(emp.incentives))"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SubTab: Expenses -->
-            <div x-show="payrollSubTab === 'expenses'" class="flex flex-col gap-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-400 font-bold">Track operational costs (fuel, utilities, maintenance, rent)</span>
-                    <button @click="openCreateExpenseModal()" class="bg-accentGreen hover:bg-accentGreen/80 text-gray-950 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Record Expense
-                    </button>
-                </div>
-                
-                <div class="overflow-x-auto border border-glassBorder rounded-xl bg-gray-900/10">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-glassBorder bg-gray-950/40 text-gray-400 font-semibold">
-                                <th class="p-3">Expense Date</th>
-                                <th class="p-3">Category</th>
-                                <th class="p-3">Description</th>
-                                <th class="p-3 text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-glassBorder">
-                            <template x-for="exp in expenses" :key="exp.id">
-                                <tr class="hover:bg-gray-950/20 transition-colors">
-                                    <td class="p-3 text-gray-400 font-mono" x-text="exp.date || 'N/A'"></td>
-                                    <td class="p-3">
-                                        <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase" x-text="exp.category"></span>
-                                    </td>
-                                    <td class="p-3 text-gray-200" x-text="exp.description"></td>
-                                    <td class="p-3 text-right font-black text-red-400" x-text="'₱' + formatCurrency(exp.amount)"></td>
-                                </tr>
-                            </template>
-                            <template x-if="expenses.length === 0">
-                                <tr>
-                                    <td colspan="4" class="p-8 text-center text-gray-500">
-                                        No expenses recorded yet.
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
 
@@ -1704,9 +1602,7 @@
                 { id: 'pos', name: 'POS Checkout', icon: 'fa-solid fa-cash-register' },
                 { id: 'sales', name: 'Quick Orders', icon: 'fa-solid fa-receipt' },
                 { id: 'inventory', name: 'Inventory Master', icon: 'fa-solid fa-boxes-stacked' },
-                { id: 'trips', name: 'Truck Trips', icon: 'fa-solid fa-truck-fast' },
-                { id: 'cashier', name: 'Cashier Credits', icon: 'fa-solid fa-vault' },
-                { id: 'payroll', name: 'Payroll & Expenses', icon: 'fa-solid fa-wallet' },
+                { id: 'subscriptions', name: 'Subscriptions & Payments', icon: 'fa-solid fa-file-signature' },
                 { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-chart-line' },
                 { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
             ],
@@ -1719,7 +1615,7 @@
             customers: [],
             employees: [],
             sales: [],
-            trips: [],
+            subscriptions: [],
             purchase_orders: [],
             expenses: [],
             audit_logs: [],
@@ -1852,7 +1748,7 @@
                     this.customers = data.customers || [];
                     this.employees = data.employees || [];
                     this.sales = data.sales || [];
-                    this.trips = data.trips || [];
+                    this.subscriptions = data.subscriptions || [];
                     this.purchase_orders = data.purchase_orders || [];
                     this.expenses = data.expenses || [];
                     this.audit_logs = data.audit_logs || [];
@@ -3459,6 +3355,48 @@
                 document.body.appendChild(dlAnchor);
                 dlAnchor.click();
                 dlAnchor.remove();
+            },
+            
+            async approveSubscription(subId) {
+                if (!confirm("Are you sure you want to approve this GCash payment and activate the user's login access?")) return;
+                try {
+                    const res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'approve_subscription', subscription_id: subId })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(data.message);
+                        this.subscriptions = data.state.subscriptions || [];
+                        this.customers = data.state.customers || [];
+                    } else {
+                        alert("Error: " + (data.error || "Failed to approve subscription"));
+                    }
+                } catch (e) {
+                    alert("Network error processing approval.");
+                }
+            },
+
+            async rejectSubscription(subId) {
+                const notes = prompt("Ilagay ang dahilan ng pag-reject sa GCash payment request:");
+                if (notes === null) return;
+                try {
+                    const res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'reject_subscription', subscription_id: subId, notes: notes })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(data.message);
+                        this.subscriptions = data.state.subscriptions || [];
+                    } else {
+                        alert("Error: " + (data.error || "Failed to reject subscription"));
+                    }
+                } catch (e) {
+                    alert("Network error processing rejection.");
+                }
             },
             
             formatCurrency(val) {

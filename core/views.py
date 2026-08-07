@@ -4,7 +4,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from core.models import Category, Brand, Supplier, Product, Customer, Employee, Sale, SaleItem, Trip, TripItem, PurchaseOrder, PurchaseItem, Expense, AuditLog
+from django.db.models import Q
+from django.utils import timezone
+from core.models import Category, Brand, Supplier, Product, Customer, Employee, Sale, SaleItem, Trip, TripItem, PurchaseOrder, PurchaseItem, Expense, AuditLog, Subscription
 import json
 from decimal import Decimal
 from datetime import datetime, date
@@ -72,6 +74,7 @@ def get_current_state():
         "customers": [serialize_model(c) for c in Customer.objects.all()],
         "employees": [serialize_model(e) for e in Employee.objects.all()],
         "expenses": [serialize_model(e) for e in Expense.objects.all()],
+        "subscriptions": [serialize_model(s) for s in Subscription.objects.order_by('-created_at')],
         "audit_logs": [serialize_model(a) for a in AuditLog.objects.order_by('-timestamp')[:50]],
     }
     
@@ -180,13 +183,32 @@ def login_view(request):
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            emp = getattr(user, 'employee', None)
+            is_admin = user.is_superuser or (emp and emp.role == 'Admin')
+            
+            if not is_admin:
+                sub = Subscription.objects.filter(user=user).first()
+                if not sub:
+                    sub = Subscription.objects.filter(username=username).first()
+                
+                if sub and sub.status == 'Pending':
+                    error_message = "Notice: Ang inyong GCash subscription payment ay PENDING pa sa Admin approval. Makakatanggap ka ng email notification o abangan ang pag-aprub ng admin."
+                    return render(request, 'login.html', {'error_message': error_message})
+                elif sub and sub.status == 'Rejected':
+                    error_message = "Notice: Ang inyong subscription request ay hinarang ng Admin. Mangyaring mag-submit muli ng subscription sa aming payment page."
+                    return render(request, 'login.html', {'error_message': error_message})
+
             login(request, user)
             cust = getattr(user, 'customer_profile', None)
             if cust:
                 return redirect('customer_portal')
             return redirect('admin_portal')
         else:
-            error_message = "Invalid username or password."
+            sub = Subscription.objects.filter(username=username, status='Pending').first()
+            if sub:
+                error_message = f"Notice: Ang username na '{username}' ({sub.plan_name}) ay PENDING pa sa Admin approval ng GCash payment! Mag-hintay bago mag-login."
+            else:
+                error_message = "Maling username o password."
             
     return render(request, 'login.html', {'error_message': error_message})
 
@@ -204,46 +226,83 @@ def customer_portal(request):
         
     return render(request, 'customer_portal.html', {'customer': cust})
 
-def signup_view(request):
-    if request.user.is_authenticated:
-        cust = getattr(request.user, 'customer_profile', None)
-        if cust:
-            return redirect('customer_portal')
-        return redirect('admin_portal')
-        
+def subscribe_view(request):
     error_message = None
+    success_message = None
+    
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        name = request.POST.get('name')
-        contact = request.POST.get('contact')
-        email = request.POST.get('email')
-        address = request.POST.get('address')
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        plan_name = request.POST.get('plan_name', 'Starter Plan (₱100)')
+        amount_val = request.POST.get('amount', '100')
+        gcash_ref = request.POST.get('gcash_reference', '').strip()
         
-        if password != confirm_password:
-            error_message = "Passwords do not match."
+        if not name or not email or not username or not password or not gcash_ref:
+            error_message = "Paki-kumpleto ang lahat ng field kasama ang GCash Reference Number."
         elif User.objects.filter(username=username).exists():
-            error_message = "Username is already taken."
+            error_message = "Ang username na ito ay nakarehistro na sa system. Pumili ng iba."
+        elif Subscription.objects.filter(username=username, status='Pending').exists():
+            error_message = "May umiiral nang pending subscription para sa username na ito. Mag-antay ng approval."
         else:
             try:
-                user = User.objects.create_user(username=username, password=password, email=email)
-                customer = Customer.objects.create(
-                    user=user,
+                sub = Subscription.objects.create(
                     name=name,
-                    contact=contact,
                     email=email,
-                    address=address,
-                    credit_limit=10000.00,
-                    credit_balance=0.00,
-                    reward_points=0
+                    username=username,
+                    password=password,
+                    plan_name=plan_name,
+                    amount=Decimal(str(amount_val)),
+                    gcash_reference=gcash_ref,
+                    status='Pending'
                 )
-                login(request, user)
-                return redirect('customer_portal')
+                AuditLog.objects.create(
+                    user=username,
+                    action="Submit Subscription",
+                    module="Subscriptions",
+                    details=f"New subscription request submitted: {name} ({email}), Plan: {plan_name}, Amount: PHP {amount_val}, GCash Ref: {gcash_ref}."
+                )
+                success_message = f"Salamat! Ang inyong subscription request ({plan_name}) at GCash Ref: {gcash_ref} ay na-submit na. Kapag na-verify at inaprobahan na ng Admin, maaari ka nang mag-log in!"
             except Exception as e:
-                error_message = "Error creating account: " + str(e)
-                
-    return render(request, 'signup.html', {'error_message': error_message})
+                error_message = "Nagkaroon ng error sa pag-submit: " + str(e)
+
+    plans = [
+        {"id": "starter", "name": "Starter Plan", "price": "100", "period": "/ buwan", "desc": "Pang-budget access para sa basic portal and ordering system.", "badge": "Pang-Budget"},
+        {"id": "standard", "name": "Standard Plan", "price": "250", "period": "/ buwan", "desc": "Kumpletong access para sa customer ordering & tracking.", "badge": "Pinakasikat"},
+        {"id": "vip", "name": "VIP Business", "price": "500", "period": "/ buwan", "desc": "Sagad na partner privileges, fast priority & custom reporting.", "badge": "Pinaka-Sulit"}
+    ]
+    
+    return render(request, 'subscription.html', {
+        'error_message': error_message,
+        'success_message': success_message,
+        'plans': plans,
+        'gcash_number': '09366939816'
+    })
+
+def api_check_subscription(request):
+    query = request.GET.get('query', '').strip()
+    if not query:
+        return JsonResponse({'found': False, 'error': 'Ilagay ang iyong Email o Username.'})
+        
+    sub = Subscription.objects.filter(Q(email__iexact=query) | Q(username__iexact=query)).order_by('-created_at').first()
+    if sub:
+        return JsonResponse({
+            'found': True,
+            'username': sub.username,
+            'name': sub.name,
+            'email': sub.email,
+            'plan_name': sub.plan_name,
+            'amount': float(sub.amount),
+            'gcash_reference': sub.gcash_reference,
+            'status': sub.status,
+            'created_at': sub.created_at.strftime('%Y-%m-%d %H:%M'),
+            'approved_at': sub.approved_at.strftime('%Y-%m-%d %H:%M') if sub.approved_at else None
+        })
+    return JsonResponse({'found': False, 'error': 'Walang nahanap na subscription request sa Email/Username na ito.'})
+
+def signup_view(request):
+    return redirect('subscribe')
 
 @csrf_exempt
 def api_state(request):
@@ -546,6 +605,58 @@ def api_state(request):
                         module="Purchase Orders",
                         details=f"Created PO {po_no} for {supplier.name} totaling PHP {total:.2f}."
                     )
+
+            elif action == "approve_subscription":
+                sub_id = data.get("subscription_id")
+                sub = Subscription.objects.filter(id=sub_id).first()
+                if sub:
+                    user = User.objects.filter(username=sub.username).first()
+                    if not user:
+                        user = User.objects.create_user(username=sub.username, password=sub.password, email=sub.email)
+                    else:
+                        user.is_active = True
+                        user.set_password(sub.password)
+                        user.save()
+                    
+                    Customer.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            'name': sub.name,
+                            'email': sub.email,
+                            'contact': '',
+                            'address': 'Subscribed Customer'
+                        }
+                    )
+                    
+                    sub.status = "Approved"
+                    sub.user = user
+                    sub.approved_at = timezone.now()
+                    sub.save()
+                    
+                    AuditLog.objects.create(
+                        user=request.user.username if request.user.is_authenticated else "admin",
+                        action="Approve Subscription",
+                        module="Subscriptions",
+                        details=f"Approved GCash subscription for {sub.name} ({sub.username}). Plan: {sub.plan_name}, GCash Ref: {sub.gcash_reference}."
+                    )
+                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} approved! User can now log in.", "state": get_current_state()})
+
+            elif action == "reject_subscription":
+                sub_id = data.get("subscription_id")
+                notes = data.get("notes", "Rejected by Admin.")
+                sub = Subscription.objects.filter(id=sub_id).first()
+                if sub:
+                    sub.status = "Rejected"
+                    sub.admin_notes = notes
+                    sub.save()
+                    
+                    AuditLog.objects.create(
+                        user=request.user.username if request.user.is_authenticated else "admin",
+                        action="Reject Subscription",
+                        module="Subscriptions",
+                        details=f"Rejected subscription for {sub.name} ({sub.username}). Reason: {notes}."
+                    )
+                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} rejected.", "state": get_current_state()})
 
             elif action == "receive_po":
                 po_no = data.get("po_no")

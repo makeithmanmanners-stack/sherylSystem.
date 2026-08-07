@@ -169,3 +169,21 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.module} - {self.action} ({self.timestamp})"
+
+class Subscription(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='subscription')
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    username = models.CharField(max_length=150)
+    password = models.CharField(max_length=128)
+    plan_name = models.CharField(max_length=100) # Starter ₱100, Standard ₱250, VIP ₱500
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=100.00)
+    gcash_reference = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, default='Pending') # Pending, Approved, Rejected
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Subscription {self.username} - {self.plan_name} ({self.status})"
+

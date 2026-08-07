@@ -230,11 +230,20 @@
             </button>
         </form>
 
-        <!-- Sign Up Link -->
-        <div class="mt-8 pt-4 border-t border-slate-200/50 dark:border-glassBorder w-full text-center flex flex-col gap-2.5">
-            <a href="{% url 'signup' %}" class="text-xs text-accentCyan hover:underline transition-colors font-bold">
-                New Store Owner? <b>Register / Sign Up here</b>
-            </a>
+        <!-- GCash Subscription & Sign Up Callout -->
+        <div class="mt-6 pt-4 border-t border-slate-200/50 dark:border-glassBorder w-full text-center flex flex-col gap-3">
+            <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-3.5 rounded-2xl border border-accentCyan/30 text-left flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black text-accentCyan flex items-center gap-1.5 uppercase">
+                        <i class="fa-solid fa-mobile-screen-button"></i> Budget GCash Subscription
+                    </span>
+                    <span class="text-[10px] font-extrabold bg-accentGreen/20 text-accentGreen px-2 py-0.5 rounded border border-accentGreen/30">₱100 - ₱500</span>
+                </div>
+                <p class="text-[11px] text-slate-400 dark:text-gray-300">Wala pa bang account? Mag-pay via GCash (<b>09366939816</b>) bago mag-log in!</p>
+                <a href="{% url 'subscribe' %}" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold py-2 px-3 rounded-xl text-xs text-center flex items-center justify-center gap-1.5 hover:opacity-90 transition-all shadow-md">
+                    <i class="fa-solid fa-credit-card"></i> Mag-Subscribe & Mag-Pay via GCash
+                </a>
+            </div>
         </div>
     </div>
 

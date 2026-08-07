@@ -14,10 +14,14 @@ urlpatterns = [
     path('customer-portal', views.customer_portal),
     path('signup/', views.signup_view, name='signup'),
     path('signup', views.signup_view),
+    path('subscribe/', views.subscribe_view, name='subscribe'),
+    path('subscribe', views.subscribe_view),
     
     # APIs
     path('api/state/', views.api_state, name='api_state_slash'),
     path('api/state', views.api_state, name='api_state'),
+    path('api/subscription/check/', views.api_check_subscription, name='api_check_subscription'),
+    path('api/subscription/check', views.api_check_subscription),
     path('api/barcode/<str:sku>/', views.generate_barcode, name='generate_barcode'),
     path('api/barcode/<str:sku>', views.generate_barcode),
     path('api/qrcode/<str:sku>/', views.generate_qrcode, name='generate_qrcode'),
