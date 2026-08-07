@@ -17,7 +17,7 @@
             
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
-            <a href="/admin/" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
+            <a href="/admin/" x-show="userPlan === 'Admin'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
                 <i class="fa-brands fa-python w-5 text-center text-sm text-accentCyan"></i>
                 <span class="font-medium">Django Admin</span>
             </a>
@@ -802,11 +802,37 @@
         <!-- SETTINGS BACKUP MODULE -->
         <div x-show="activeTab === 'settings'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn">
             <div class="pb-3 border-b border-glassBorder">
-                <h3 class="font-extrabold text-base text-white">System Settings & Logs</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Download full system database JSON backups, and view database activity audit logs.</p>
+                <h3 class="font-extrabold text-base text-white">System Settings, Store Profile & Security Logs</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Edit store profile info, update admin credentials, download database backups, and view activity logs.</p>
             </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Store Profile & Security Form Card -->
+                <div class="border border-glassBorder p-5 rounded-xl bg-gray-900/20 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-accentCyan uppercase mb-3"><i class="fa-solid fa-store mr-1"></i> Store Profile & Account Settings</h4>
+                        <div class="flex flex-col gap-3 text-xs">
+                            <div>
+                                <label class="block text-gray-400 font-semibold mb-1">Store Name</label>
+                                <input type="text" x-model="settingsStoreName" placeholder="e.g. My Sari-Sari Store" class="w-full glass-input rounded-lg px-3 py-2 text-xs font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 font-semibold mb-1">Admin Email Address</label>
+                                <input type="email" x-model="settingsEmail" placeholder="admin@example.com" class="w-full glass-input rounded-lg px-3 py-2 text-xs font-bold">
+                            </div>
+                            <div class="pt-2 border-t border-white/10">
+                                <label class="block text-gray-400 font-semibold mb-1">New Password (leave blank to keep current)</label>
+                                <input type="password" x-model="settingsPassword" placeholder="••••••••" class="w-full glass-input rounded-lg px-3 py-2 text-xs font-bold mb-2">
+                                <label class="block text-gray-400 font-semibold mb-1">Confirm New Password</label>
+                                <input type="password" x-model="settingsConfirmPassword" placeholder="••••••••" class="w-full glass-input rounded-lg px-3 py-2 text-xs font-bold">
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="saveSystemSettings()" class="w-full bg-accentGreen hover:bg-accentGreen/80 text-gray-950 font-black py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 mt-4 shadow-lg">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Profile & Credentials
+                    </button>
+                </div>
+
                 <!-- Backup Control Card -->
                 <div class="border border-glassBorder p-5 rounded-xl bg-gray-900/20 flex flex-col justify-between">
                     <div>
@@ -819,7 +845,7 @@
                 </div>
                 
                 <!-- Audit logs list -->
-                <div class="border border-glassBorder p-4 rounded-xl bg-gray-900/20 lg:col-span-2">
+                <div class="border border-glassBorder p-4 rounded-xl bg-gray-900/20">
                     <h4 class="font-bold text-xs text-accentCyan uppercase mb-3"><i class="fa-solid fa-receipt mr-1"></i> Audit Activity Trail</h4>
                     <div class="overflow-y-auto max-h-[300px] flex flex-col gap-2 font-mono text-[10px]">
                         <template x-for="log in audit_logs" :key="log.id">
@@ -1607,6 +1633,13 @@
                 { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
             ],
             
+            userPlan: 'Admin',
+            storeName: 'Sheyde Sari-Sari Store & ERP',
+            settingsStoreName: '',
+            settingsEmail: '',
+            settingsPassword: '',
+            settingsConfirmPassword: '',
+            
             // Loaded State
             categories: [],
             brands: [],
@@ -1742,6 +1775,40 @@
                     let res = await fetch('/api/state');
                     let data = await res.json();
                     
+                    this.userPlan = data.user_plan || 'Admin';
+                    this.storeName = data.store_name || 'Sheyde Sari-Sari Store & ERP';
+                    if (!this.settingsStoreName) this.settingsStoreName = this.storeName;
+
+                    // Filter tabs according to user_plan
+                    let allTabs = [
+                        { id: 'dashboard', name: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
+                        { id: 'sales', name: 'Quick Orders', icon: 'fa-solid fa-receipt' },
+                        { id: 'inventory', name: 'Inventory Master', icon: 'fa-solid fa-boxes-stacked' },
+                        { id: 'subscriptions', name: 'Subscriptions & Payments', icon: 'fa-solid fa-file-signature' },
+                        { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-chart-line' },
+                        { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
+                    ];
+
+                    if (this.userPlan === 'Starter') {
+                        this.tabs = allTabs.filter(t => ['sales', 'inventory', 'settings'].includes(t.id));
+                        if (!this.tabs.some(t => t.id === this.activeTab)) {
+                            this.activeTab = 'sales';
+                        }
+                    } else if (this.userPlan === 'Standard') {
+                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'settings'].includes(t.id));
+                        if (!this.tabs.some(t => t.id === this.activeTab)) {
+                            this.activeTab = 'dashboard';
+                        }
+                    } else if (this.userPlan === 'VIP') {
+                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'reports', 'settings'].includes(t.id));
+                        if (!this.tabs.some(t => t.id === this.activeTab)) {
+                            this.activeTab = 'dashboard';
+                        }
+                    } else {
+                        // Admin / Superuser gets full access
+                        this.tabs = allTabs;
+                    }
+
                     this.categories = data.categories || [];
                     this.brands = data.brands || [];
                     this.suppliers = data.suppliers || [];
@@ -3399,6 +3466,38 @@
                 }
             },
             
+            async saveSystemSettings() {
+                if (this.settingsPassword && this.settingsPassword !== this.settingsConfirmPassword) {
+                    alert("Passwords do not match!");
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'update_system_settings',
+                            store_name: this.settingsStoreName,
+                            email: this.settingsEmail,
+                            password: this.settingsPassword
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(data.message);
+                        this.settingsPassword = '';
+                        this.settingsConfirmPassword = '';
+                        if (data.state && data.state.store_name) {
+                            this.storeName = data.state.store_name;
+                        }
+                    } else {
+                        alert("Error: " + (data.error || "Failed to update settings"));
+                    }
+                } catch(e) {
+                    alert("Network error updating settings.");
+                }
+            },
+
             formatCurrency(val) {
                 let num = parseFloat(val);
                 if (isNaN(num)) num = 0;

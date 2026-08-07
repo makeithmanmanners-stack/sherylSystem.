@@ -59,7 +59,7 @@ def serialize_model(model_obj):
             data[field.name] = str(val)
     return data
 
-def get_current_state():
+def get_current_state(request=None):
     if Product.objects.count() == 0:
         from django.core.management import call_command
         try:
@@ -67,7 +67,31 @@ def get_current_state():
         except Exception as e:
             print("Auto-seed error: ", e)
 
+    user_plan = "Admin"
+    store_name = "Sheyde Sari-Sari Store & ERP"
+    if request and hasattr(request, 'user') and request.user.is_authenticated:
+        emp = getattr(request.user, 'employee', None)
+        is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+        if not is_admin:
+            sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+            if sub:
+                plan = sub.plan_name.lower()
+                if 'vip' in plan or '799' in plan:
+                    user_plan = 'VIP'
+                elif 'standard' in plan or '549' in plan:
+                    user_plan = 'Standard'
+                else:
+                    user_plan = 'Starter'
+            else:
+                user_plan = 'Starter'
+            
+            cust = getattr(request.user, 'customer_profile', None)
+            if cust and cust.name:
+                store_name = cust.name
+
     state = {
+        "user_plan": user_plan,
+        "store_name": store_name,
         "categories": [serialize_model(c) for c in Category.objects.all()],
         "brands": [serialize_model(b) for b in Brand.objects.all()],
         "suppliers": [serialize_model(s) for s in Supplier.objects.all()],
@@ -153,21 +177,21 @@ def get_current_state():
 @login_required(login_url='login')
 def index(request):
     emp = getattr(request.user, 'employee', None)
-    if not request.user.is_superuser and (not emp or emp.role != 'Admin'):
-        cust = getattr(request.user, 'customer_profile', None)
-        if cust:
-            return redirect('customer_portal')
-        return HttpResponse("Access Denied: Admin privileges required.", status=403)
+    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+    if not is_admin:
+        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+        if not sub:
+            return HttpResponse("Access Denied: Active approved subscription required to access Admin Panel.", status=403)
     return render(request, 'index.html')
 
 @login_required(login_url='login')
 def store(request):
     emp = getattr(request.user, 'employee', None)
-    if not request.user.is_superuser and (not emp or emp.role != 'Admin'):
-        cust = getattr(request.user, 'customer_profile', None)
-        if cust:
-            return redirect('customer_portal')
-        return HttpResponse("Access Denied: Admin privileges required to access storefront.", status=403)
+    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+    if not is_admin:
+        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+        if not sub:
+            return HttpResponse("Access Denied: Active approved subscription required to access Storefront.", status=403)
     return render(request, 'store.html')
 
 def login_view(request):
@@ -235,8 +259,8 @@ def subscribe_view(request):
         email = request.POST.get('email', '').strip()
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
-        plan_name = request.POST.get('plan_name', 'Starter Plan (₱100)')
-        amount_val = request.POST.get('amount', '100')
+        plan_name = request.POST.get('plan_name', 'Starter Plan (₱359)')
+        amount_val = request.POST.get('amount', '359')
         gcash_ref = request.POST.get('gcash_reference', '').strip()
         
         if not name or not email or not username or not password or not gcash_ref:
@@ -268,9 +292,9 @@ def subscribe_view(request):
                 error_message = "Nagkaroon ng error sa pag-submit: " + str(e)
 
     plans = [
-        {"id": "starter", "name": "Starter Plan", "price": "100", "period": "/ buwan", "desc": "Pang-budget access para sa basic portal and ordering system.", "badge": "Pang-Budget"},
-        {"id": "standard", "name": "Standard Plan", "price": "250", "period": "/ buwan", "desc": "Kumpletong access para sa customer ordering & tracking.", "badge": "Pinakasikat"},
-        {"id": "vip", "name": "VIP Business", "price": "500", "period": "/ buwan", "desc": "Sagad na partner privileges, fast priority & custom reporting.", "badge": "Pinaka-Sulit"}
+        {"id": "starter", "name": "Starter Plan", "price": "359", "period": "/ buwan", "desc": "Access sa Storefront, Admin Panel, Quick Orders, Inventory Master & Settings.", "badge": "Pang-Budget"},
+        {"id": "standard", "name": "Standard Plan", "price": "549", "period": "/ buwan", "desc": "Access sa Storefront, Dashboard, Quick Orders, Inventory Master & Settings.", "badge": "Pinakasikat"},
+        {"id": "vip", "name": "VIP Business", "price": "799", "period": "/ buwan", "desc": "Full Access kasama ang AI Stock Forecasting & Priority Support.", "badge": "Pinaka-Sulit"}
     ]
     
     return render(request, 'subscription.html', {
@@ -307,7 +331,7 @@ def signup_view(request):
 @csrf_exempt
 def api_state(request):
     if request.method == 'GET':
-        response = JsonResponse(get_current_state())
+        response = JsonResponse(get_current_state(request))
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response['Pragma'] = 'no-cache'
         response['Expires'] = '0'
@@ -639,7 +663,7 @@ def api_state(request):
                         module="Subscriptions",
                         details=f"Approved GCash subscription for {sub.name} ({sub.username}). Plan: {sub.plan_name}, GCash Ref: {sub.gcash_reference}."
                     )
-                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} approved! User can now log in.", "state": get_current_state()})
+                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} approved! User can now log in.", "state": get_current_state(request)})
 
             elif action == "reject_subscription":
                 sub_id = data.get("subscription_id")
@@ -656,7 +680,39 @@ def api_state(request):
                         module="Subscriptions",
                         details=f"Rejected subscription for {sub.name} ({sub.username}). Reason: {notes}."
                     )
-                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} rejected.", "state": get_current_state()})
+                    return JsonResponse({"success": True, "message": f"Subscription for {sub.name} rejected.", "state": get_current_state(request)})
+
+            elif action == "update_system_settings":
+                store_name_val = data.get("store_name", "").strip()
+                email_val = data.get("email", "").strip()
+                new_password = data.get("password", "").strip()
+                
+                user = request.user
+                if user and user.is_authenticated:
+                    if email_val:
+                        user.email = email_val
+                    if new_password:
+                        user.set_password(new_password)
+                    user.save()
+
+                    cust = getattr(user, 'customer_profile', None)
+                    if cust:
+                        if email_val:
+                            cust.email = email_val
+                        if store_name_val:
+                            cust.name = store_name_val
+                        cust.save()
+                    elif store_name_val:
+                        Customer.objects.create(user=user, name=store_name_val, email=email_val or user.email)
+                    
+                    AuditLog.objects.create(
+                        user=user.username,
+                        action="Update System Settings",
+                        module="Settings",
+                        details=f"Updated Store/Account Settings: Store Name: '{store_name_val}', Email: '{email_val}', Password {'updated' if new_password else 'unchanged'}."
+                    )
+                    return JsonResponse({"success": True, "message": "System Settings & Account Profile updated successfully!", "state": get_current_state(request)})
+                return JsonResponse({"success": False, "error": "User not authenticated."})
 
             elif action == "receive_po":
                 po_no = data.get("po_no")
