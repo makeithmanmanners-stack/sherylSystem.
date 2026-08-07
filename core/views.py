@@ -231,6 +231,8 @@ def get_current_state(request=None):
 
 @login_required(login_url='login')
 def index(request):
+    if request.user.username.lower() == 'khertadmin':
+        return redirect('store_front')
     emp = getattr(request.user, 'employee', None)
     is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
     if not is_admin:
@@ -251,6 +253,8 @@ def store(request):
 
 def login_view(request):
     if request.user.is_authenticated:
+        if request.user.username.lower() == 'khertadmin':
+            return redirect('store_front')
         cust = getattr(request.user, 'customer_profile', None)
         if cust:
             return redirect('customer_portal')
@@ -278,6 +282,8 @@ def login_view(request):
                     return render(request, 'login.html', {'error_message': error_message})
 
             login(request, user)
+            if user.username.lower() == 'khertadmin':
+                return redirect('store_front')
             cust = getattr(user, 'customer_profile', None)
             if cust:
                 return redirect('customer_portal')

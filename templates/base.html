@@ -227,7 +227,7 @@
             </a>
             {% endif %}
             
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and user.username|lower != 'khertadmin' %}
                 {% if user.customer_profile %}
                     <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-user-tag text-gray-400"></i> My Portal
@@ -290,8 +290,8 @@
                         <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">{{ user.employee.name }}</p>
                         <p class="text-[10px] text-accentCyan font-bold tracking-wider uppercase">{{ user.employee.role }}</p>
                     {% else %}
-                        <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">Sheyde Vasquez</p>
-                        <p class="text-[10px] text-accentCyan font-bold tracking-wider">ADMINISTRATOR</p>
+                        <p class="text-xs font-semibold text-slate-700 dark:text-gray-250">{{ user.username }}</p>
+                        <p class="text-[10px] text-accentCyan font-bold tracking-wider">STOREFRONT USER</p>
                     {% endif %}
                 </div>
                 <div class="w-9 h-9 rounded-full bg-accentBlue/20 border border-accentBlue/30 flex items-center justify-center overflow-hidden">
@@ -324,7 +324,7 @@
             </a>
             {% endif %}
             
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and user.username|lower != 'khertadmin' %}
                 {% if user.customer_profile %}
                     <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
                         <i class="fa-solid fa-user-tag text-gray-400 w-5"></i> My Portal
