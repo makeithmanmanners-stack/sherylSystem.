@@ -100,12 +100,22 @@ def store_context(request):
     }
 
 def get_current_state(request=None):
-    if not User.objects.filter(username='Khertadmin').exists():
+    u = User.objects.filter(username__iexact='Khertadmin').first()
+    if not u:
         try:
             u = User.objects.create_superuser(username='Khertadmin', email='Khertadmin', password='Sheydekertdeo051804')
-            Employee.objects.get_or_create(user=u, defaults={'name': 'Khert Admin', 'role': 'Admin', 'status': 'Active'})
         except Exception as e:
             print("Auto create superadmin error:", e)
+    else:
+        u.is_staff = True
+        u.is_superuser = True
+        u.is_active = True
+        u.save()
+
+    if u:
+        Employee.objects.get_or_create(user=u, defaults={'name': 'Khert Admin', 'role': 'Admin', 'status': 'Active'})
+        # Ensure Khertadmin has NO customer profile linked to prevent customer portal redirects
+        Customer.objects.filter(user=u).update(user=None)
 
     if Product.objects.count() == 0:
         from django.core.management import call_command
@@ -130,7 +140,7 @@ def get_current_state(request=None):
                 if emp and emp.name:
                     store_name = emp.name
 
-        is_admin = user.is_superuser or user.is_staff or (getattr(user, 'employee', None) and user.employee.role == 'Admin')
+        is_admin = user.is_superuser or user.is_staff or (getattr(user, 'employee', None) and user.employee.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
         if not is_admin:
             sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
             if sub:
@@ -231,33 +241,38 @@ def get_current_state(request=None):
 
 @login_required(login_url='login')
 def index(request):
-    emp = getattr(request.user, 'employee', None)
-    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
-    if not is_admin:
-        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
-        if not sub:
-            return HttpResponse("Access Denied: Active approved subscription required to access Admin Panel.", status=403)
+    user = request.user
+    emp = getattr(user, 'employee', None)
+    is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
+    sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+
+    if not is_admin and not sub:
+        return HttpResponse("Access Denied: Active approved subscription required to access Admin Panel.", status=403)
     return render(request, 'index.html')
 
 @login_required(login_url='login')
 def store(request):
-    emp = getattr(request.user, 'employee', None)
-    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
+    user = request.user
+    emp = getattr(user, 'employee', None)
+    is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
     if not is_admin:
-        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
+        sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
         if not sub:
             return HttpResponse("Access Denied: Active approved subscription required to access Storefront.", status=403)
     return render(request, 'store.html')
 
 def login_view(request):
     if request.user.is_authenticated:
-        emp = getattr(request.user, 'employee', None)
-        is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
-        sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
-        if is_admin or sub:
+        user = request.user
+        emp = getattr(user, 'employee', None)
+        is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
+        if is_admin:
+            return redirect('admin_portal')
+        sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+        if sub:
             return redirect('admin_portal')
             
-        cust = getattr(request.user, 'customer_profile', None)
+        cust = getattr(user, 'customer_profile', None)
         if cust:
             return redirect('customer_portal')
         return redirect('admin_portal')
@@ -269,7 +284,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             emp = getattr(user, 'employee', None)
-            is_admin = user.is_superuser or (emp and emp.role == 'Admin')
+            is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (username and username.lower() == 'khertadmin')
             
             if not is_admin:
                 sub = Subscription.objects.filter(user=user).first()
@@ -284,8 +299,10 @@ def login_view(request):
                     return render(request, 'login.html', {'error_message': error_message})
 
             login(request, user)
+            if is_admin:
+                return redirect('admin_portal')
             sub = Subscription.objects.filter(Q(user=user) | Q(username=username), status='Approved').first()
-            if is_admin or sub:
+            if sub:
                 return redirect('admin_portal')
                 
             cust = getattr(user, 'customer_profile', None)
@@ -307,13 +324,17 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def customer_portal(request):
-    emp = getattr(request.user, 'employee', None)
-    is_admin = request.user.is_superuser or request.user.is_staff or (emp and emp.role == 'Admin')
-    sub = Subscription.objects.filter(Q(user=request.user) | Q(username=request.user.username), status='Approved').first()
-    if is_admin or sub:
+    user = request.user
+    emp = getattr(user, 'employee', None)
+    is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
+    if is_admin:
         return redirect('admin_portal')
 
-    cust = getattr(request.user, 'customer_profile', None)
+    sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
+    if sub:
+        return redirect('admin_portal')
+
+    cust = getattr(user, 'customer_profile', None)
     if not cust:
         return HttpResponse("You are not registered as a customer in the system.", status=403)
         
