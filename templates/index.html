@@ -17,7 +17,7 @@
             
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
-            <a href="/admin/" x-show="userPlan === 'Admin'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
+            <a href="/admin/" x-show="userPlan === 'Admin' || userPlan === 'Khertadmin'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
                 <i class="fa-brands fa-python w-5 text-center text-sm text-accentCyan"></i>
                 <span class="font-medium">Django Admin</span>
             </a>
@@ -1801,6 +1801,11 @@
                         }
                     } else if (this.userPlan === 'VIP') {
                         this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'reports', 'settings'].includes(t.id));
+                        if (!this.tabs.some(t => t.id === this.activeTab)) {
+                            this.activeTab = 'dashboard';
+                        }
+                    } else if (this.userPlan === 'Khertadmin') {
+                        this.tabs = allTabs.filter(t => t.id !== 'subscriptions');
                         if (!this.tabs.some(t => t.id === this.activeTab)) {
                             this.activeTab = 'dashboard';
                         }
