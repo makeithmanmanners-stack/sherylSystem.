@@ -1804,13 +1804,8 @@
                         if (!this.tabs.some(t => t.id === this.activeTab)) {
                             this.activeTab = 'dashboard';
                         }
-                    } else if (this.userPlan === 'Khertadmin') {
-                        this.tabs = allTabs.filter(t => t.id !== 'subscriptions');
-                        if (!this.tabs.some(t => t.id === this.activeTab)) {
-                            this.activeTab = 'dashboard';
-                        }
                     } else {
-                        // Admin / Superuser gets full access
+                        // Admin / Superuser gets full access to all modules including Subscriptions & Payments Approval
                         this.tabs = allTabs;
                     }
 

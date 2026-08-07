@@ -143,8 +143,6 @@ def get_current_state(request=None):
                     user_plan = 'Starter'
             else:
                 user_plan = 'Starter'
-        elif user.username.lower() == 'khertadmin':
-            user_plan = 'Khertadmin'
 
     state = {
         "user_plan": user_plan,
