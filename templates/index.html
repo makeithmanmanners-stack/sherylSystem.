@@ -653,6 +653,106 @@
             </div>
         </div>
 
+        <!-- SALES LEDGER MODULE (Available for Starter, Standard, VIP Business, Superadmin) -->
+        <div x-show="activeTab === 'ledger'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-glassBorder">
+                <div>
+                    <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-accentCyan"></i> Recent Sales & Customer Orders Ledger
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Filter active sales transactions by Day, Week, Month, or Year to track customer orders.</p>
+                </div>
+
+                <!-- Timeframe Filter Tabs & Exporters -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-1.5 bg-gray-950/80 p-1.5 rounded-xl border border-glassBorder shrink-0 flex-wrap">
+                        <button @click="salesFilterPeriod = 'day'" :class="salesFilterPeriod === 'day' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-day text-[10px]"></i> Day (Today)
+                        </button>
+                        <button @click="salesFilterPeriod = 'week'" :class="salesFilterPeriod === 'week' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-week text-[10px]"></i> Week
+                        </button>
+                        <button @click="salesFilterPeriod = 'month'" :class="salesFilterPeriod === 'month' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar-days text-[10px]"></i> Month
+                        </button>
+                        <button @click="salesFilterPeriod = 'year'" :class="salesFilterPeriod === 'year' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-calendar text-[10px]"></i> Year
+                        </button>
+                        <button @click="salesFilterPeriod = 'all'" :class="salesFilterPeriod === 'all' ? 'bg-accentBlue text-white shadow-sm font-bold' : 'text-gray-400 hover:text-white'" class="px-2.5 py-1 rounded-lg text-[11px] transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-infinity text-[10px]"></i> All Time
+                        </button>
+                    </div>
+
+                    <!-- PDF & Excel Export Buttons -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button" @click="exportFilteredLedgerPDF()" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 font-extrabold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 transition-all shadow-sm">
+                            <i class="fa-solid fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button type="button" @click="exportFilteredLedgerExcel()" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-extrabold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1.5 transition-all shadow-sm">
+                            <i class="fa-solid fa-file-excel"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Statistics Badge -->
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-gray-950/40 p-2.5 rounded-lg border border-glassBorder/60 mb-1">
+                <span class="text-gray-400 font-mono">
+                    Showing <b class="text-white" x-text="filteredLedgerSales().length"></b> transaction(s) for 
+                    <b class="text-accentCyan uppercase" x-text="salesFilterPeriod === 'day' ? 'Today' : salesFilterPeriod === 'week' ? 'This Week' : salesFilterPeriod === 'month' ? 'This Month' : salesFilterPeriod === 'year' ? 'This Year' : 'All Time'"></b>
+                </span>
+                <span class="text-gray-400 font-mono">
+                    Total Sales Volume: <b class="text-accentGreen font-bold" x-text="'₱' + formatCurrency(filteredLedgerTotal())"></b>
+                </span>
+            </div>
+
+            <div class="overflow-x-auto border border-glassBorder rounded-xl bg-gray-900/20 max-h-[450px]">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-glassBorder bg-gray-950/60 text-gray-400 font-semibold uppercase tracking-wider sticky top-0 z-10 backdrop-blur-md">
+                            <th class="p-3">Invoice No</th>
+                            <th class="p-3">Order Date</th>
+                            <th class="p-3">Ordered By (Customer)</th>
+                            <th class="p-3">Payment Method</th>
+                            <th class="p-3 text-right">Grand Total</th>
+                            <th class="p-3 text-center">Status</th>
+                            <th class="p-3">Ordered Items</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glassBorder/40">
+                        <template x-for="sale in filteredLedgerSales()" :key="sale.invoice_no">
+                            <tr class="hover:bg-gray-950/30 transition-colors">
+                                <td class="p-3 font-mono font-bold text-accentCyan" x-text="sale.invoice_no"></td>
+                                <td class="p-3 text-gray-300 font-mono" x-text="sale.date ? sale.date.replace('T', ' ').slice(0, 16) : 'N/A'"></td>
+                                <td class="p-3">
+                                    <span class="font-bold text-white" x-text="sale.customer_name || 'Walk-in Customer'"></span>
+                                </td>
+                                <td class="p-3">
+                                    <span class="bg-gray-800 text-gray-300 px-2 py-0.5 rounded text-[10px] font-bold" x-text="sale.method"></span>
+                                </td>
+                                <td class="p-3 text-right font-bold text-white font-mono" x-text="'₱' + formatCurrency(sale.total)"></td>
+                                <td class="p-3 text-center">
+                                    <span :class="sale.status === 'Draft' ? 'bg-accentOrange/15 text-accentOrange border-accentOrange/20' : 'bg-accentGreen/15 text-accentGreen border-accentGreen/20'" class="px-2 py-0.5 border rounded-full text-[9px] font-extrabold" x-text="sale.status"></span>
+                                </td>
+                                <td class="p-3 text-gray-300 text-[10px] leading-relaxed">
+                                    <template x-for="item in sale.items" :key="item.product_sku">
+                                        <span class="block font-mono" x-text="'- ' + (item.product_name || item.product_sku) + ' x' + item.qty"></span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="filteredLedgerSales().length === 0">
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500 font-semibold">
+                                    No sales or customer orders found for this timeframe (<span x-text="salesFilterPeriod"></span>).
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- REPORTS ANALYTICS MODULE -->
         <div x-show="activeTab === 'reports'" class="glass-card p-5 flex flex-col gap-4 animate-fadeIn">
             <div class="pb-3 border-b border-glassBorder">
@@ -1691,11 +1791,11 @@
             activeTab: 'dashboard',
             tabs: [
                 { id: 'dashboard', name: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
-                { id: 'pos', name: 'POS Checkout', icon: 'fa-solid fa-cash-register' },
                 { id: 'sales', name: 'Quick Orders', icon: 'fa-solid fa-receipt' },
                 { id: 'inventory', name: 'Inventory Master', icon: 'fa-solid fa-boxes-stacked' },
+                { id: 'ledger', name: 'Sales Ledger', icon: 'fa-solid fa-book-bookmark' },
                 { id: 'subscriptions', name: 'Subscriptions & Payments', icon: 'fa-solid fa-file-signature' },
-                { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-chart-line' },
+                { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-brain' },
                 { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
             ],
             
@@ -1855,23 +1955,24 @@
                         { id: 'dashboard', name: 'Dashboard', icon: 'fa-solid fa-chart-pie' },
                         { id: 'sales', name: 'Quick Orders', icon: 'fa-solid fa-receipt' },
                         { id: 'inventory', name: 'Inventory Master', icon: 'fa-solid fa-boxes-stacked' },
+                        { id: 'ledger', name: 'Sales Ledger', icon: 'fa-solid fa-book-bookmark' },
                         { id: 'subscriptions', name: 'Subscriptions & Payments', icon: 'fa-solid fa-file-signature' },
-                        { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-chart-line' },
+                        { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-brain' },
                         { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
                     ];
 
                     if (this.userPlan === 'Starter') {
-                        this.tabs = allTabs.filter(t => ['sales', 'inventory', 'settings'].includes(t.id));
+                        this.tabs = allTabs.filter(t => ['sales', 'inventory', 'ledger', 'settings'].includes(t.id));
                         if (!this.tabs.some(t => t.id === this.activeTab)) {
                             this.activeTab = 'sales';
                         }
                     } else if (this.userPlan === 'Standard') {
-                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'settings'].includes(t.id));
+                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'ledger', 'settings'].includes(t.id));
                         if (!this.tabs.some(t => t.id === this.activeTab)) {
                             this.activeTab = 'dashboard';
                         }
                     } else if (this.userPlan === 'VIP') {
-                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'reports', 'settings'].includes(t.id));
+                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'ledger', 'reports', 'settings'].includes(t.id));
                         if (!this.tabs.some(t => t.id === this.activeTab)) {
                             this.activeTab = 'dashboard';
                         }
