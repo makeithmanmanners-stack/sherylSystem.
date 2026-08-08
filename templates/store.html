@@ -232,6 +232,9 @@
                                 <div class="text-right shrink-0">
                                     <span class="font-bold text-accentCyan text-xs block" x-text="'₱' + formatCurrency(prod.retail_price)"></span>
                                     <span class="text-[9px] text-accentGreen block" x-text="prod.stock_quantity + ' cases left'"></span>
+                                    <template x-if="prod.has_bottle_deposit || parseFloat(prod.bottle_deposit_fee) > 0">
+                                        <span class="text-[9px] text-amber-400 font-bold block" x-text="'Deposit: ₱' + formatCurrency(prod.bottle_deposit_fee || 10)"></span>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -317,6 +320,14 @@
                                 <span class="text-base font-extrabold text-accentCyan" x-text="'₱' + formatCurrency(prod.wholesale_price)"></span>
                             </div>
                         </div>
+
+                        <!-- Bottle Deposit Charge Fee Badge -->
+                        <template x-if="prod.has_bottle_deposit || parseFloat(prod.bottle_deposit_fee) > 0">
+                            <div class="mt-2.5 bg-amber-950/50 border border-amber-500/40 p-2 rounded-xl text-[10px] font-bold text-amber-300 flex items-center justify-between shadow-sm">
+                                <span><i class="fa-solid fa-wine-bottle mr-1 text-amber-400"></i> Deposit Charge Fee per Bottle:</span>
+                                <span class="font-mono text-amber-200 font-black text-xs" x-text="'₱' + formatCurrency(prod.bottle_deposit_fee || 10)"></span>
+                            </div>
+                        </template>
                     </div>
                     
                     <div class="mt-4 pt-3 border-t border-glassBorder flex items-center justify-between gap-3">
@@ -1421,6 +1432,11 @@
                 let emptiesVal = receipt && receipt.empties_total ? parseFloat(receipt.empties_total) : 0;
                 let payMethod = (receipt && receipt.method ? receipt.method : "CASH").toUpperCase();
                 let headerTitle = receipt && receipt.title ? receipt.title : (receipt && receipt.is_trip ? "TRIP LIQUIDATION" : "SHEYDE SARI-SARI STORE");
+                
+                let cashReceivedVal = receipt && receipt.cash_received ? parseFloat(receipt.cash_received) : grandTotal;
+                let changeVal = receipt && receipt.change ? parseFloat(receipt.change) : 0;
+                let cashStr = cashReceivedVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                let changeStr = changeVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 
                 // IF WEB BLUETOOTH GATT CONNECTION IS ACTIVE:
                 if (this.btPrinterConnected && this.btCharacteristic) {
@@ -1467,21 +1483,22 @@
 
                         data.push(...encoder.encode("ROUTE TOTALS\r\n"));
                         data.push(...encoder.encode("--------------------------------\r\n"));
-                        data.push(...encoder.encode(this.formatReceiptLine("PRODUCTS:", productsSubtotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("PRODUCTS:", productsSubtotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + "\r\n"));
                         if (discountVal > 0) {
-                            data.push(...encoder.encode(this.formatReceiptLine("DISCOUNTS:", discountVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                            data.push(...encoder.encode(this.formatReceiptLine("DISCOUNTS:", discountVal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + "\r\n"));
                         }
                         if (emptiesVal > 0) {
-                            data.push(...encoder.encode(this.formatReceiptLine("EMPTIES:", emptiesVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                            data.push(...encoder.encode(this.formatReceiptLine("EMPTIES:", emptiesVal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + "\r\n"));
                         }
-                        data.push(...encoder.encode(this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + "\r\n"));
                         data.push(...encoder.encode("================================\r\n"));
 
                         data.push(...encoder.encode("Breakdown by payment method\r\n"));
                         data.push(...encoder.encode("--------------------------------\r\n"));
-                        data.push(...encoder.encode(this.formatReceiptLine("PAYMENT METHOD", "TOTAL AMOUNT", 32) + "\r\n"));
-                        data.push(...encoder.encode(this.formatReceiptLine(payMethod, grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
-                        data.push(...encoder.encode(this.formatReceiptLine("TOTAL", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("PAYMENT METHOD", payMethod, 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("GRAND TOTAL", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("CASH TENDERED", `PHP ${cashStr}`, 32) + "\r\n"));
+                        data.push(...encoder.encode(this.formatReceiptLine("SUKLI (CHANGE)", `PHP ${changeStr}`, 32) + "\r\n"));
                         data.push(...encoder.encode("================================\r\n"));
 
                         data.push(...encoder.encode("CASHIER INFORMATION\r\n"));
@@ -1506,7 +1523,9 @@
                     productLines.join('\n') + `\n--------------------------------\n` +
                     this.formatReceiptLine("TOTAL:", String(itemCount), 32) + `\n================================\nROUTE TOTALS\n--------------------------------\n` +
                     this.formatReceiptLine("PRODUCTS:", productsSubtotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n` +
-                    this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n================================\n` +
+                    this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n` +
+                    this.formatReceiptLine("CASH TENDERED:", `PHP ${cashStr}`, 32) + `\n` +
+                    this.formatReceiptLine("SUKLI (CHANGE):", `PHP ${changeStr}`, 32) + `\n================================\n` +
                     `CASHIER INFORMATION\nNAME: SHEYDE DEONN VASQUEZ\nSIGN: __________________________\n================================\n`;
 
                 // Clean System Thermal Print Fallback (Zero app launch errors across iOS Safari & Android)
