@@ -203,13 +203,45 @@
                     </span>
                     <input type="text" 
                            x-model="searchQuery" 
+                           @focus="showSearchDropdown = true"
+                           @click.away="showSearchDropdown = false"
                            @keydown.enter="handleStorefrontSearchEnter()" 
-                           placeholder="Scan Barcode or Search Product..." 
+                           placeholder="Search Product Name or SKU..." 
                            class="w-full glass-input rounded-xl pl-9 pr-4 py-2.5 text-sm">
+
+                    <!-- Live Autocomplete Dropdown Menu -->
+                    <div x-show="searchQuery.trim().length > 0 && showSearchDropdown" 
+                         x-transition
+                         class="absolute left-0 right-0 top-full mt-1 bg-gray-950/95 border border-glassBorder rounded-xl shadow-2xl z-50 max-h-72 overflow-y-auto divide-y divide-glassBorder/40 backdrop-blur-md">
+                        <template x-for="prod in searchDropdownProducts()" :key="prod.sku">
+                            <div @click="selectDropdownProduct(prod)" class="p-3 hover:bg-accentBlue/20 cursor-pointer transition-colors flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-gray-900 border border-glassBorder shrink-0 flex items-center justify-center">
+                                        <template x-if="prod.image_url">
+                                            <img :src="prod.image_url" :alt="prod.name" class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!prod.image_url">
+                                            <i class="fa-solid fa-box text-gray-500 text-xs"></i>
+                                        </template>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <span class="font-bold text-white text-xs block truncate" x-text="prod.name"></span>
+                                        <span class="text-[10px] text-gray-400 font-mono" x-text="prod.sku + (prod.barcode ? ' | Barcode: ' + prod.barcode : '')"></span>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="font-bold text-accentCyan text-xs block" x-text="'₱' + formatCurrency(prod.retail_price)"></span>
+                                    <span class="text-[9px] text-accentGreen block" x-text="prod.stock_quantity + ' cases left'"></span>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="searchDropdownProducts().length === 0">
+                            <div class="p-4 text-center text-xs text-gray-400">
+                                No products found matching "<span class="text-white font-bold" x-text="searchQuery"></span>"
+                            </div>
+                        </template>
+                    </div>
                 </div>
-                <button @click="triggerBarcodeScan()" class="bg-gray-800 hover:bg-gray-700 text-white p-2.5 rounded-xl border border-glassBorder flex items-center justify-center shrink-0" title="Scan Barcode">
-                    <i class="fa-solid fa-barcode text-sm"></i>
-                </button>
             </div>
         </div>
         
@@ -357,6 +389,14 @@
                                     <span class="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase" :class="item.priceType === 'wholesale' ? 'bg-accentCyan/15 text-accentCyan' : 'bg-gray-800 text-gray-400'" x-text="item.priceType"></span>
                                     <span class="text-gray-400 font-mono text-[11px]" x-text="'@ ₱' + formatCurrency(item.price)"></span>
                                 </div>
+                                <template x-if="item.has_bottle_deposit">
+                                    <div class="mt-1 flex items-center justify-between text-[10px] bg-amber-950/40 p-1.5 rounded border border-amber-500/40 text-amber-300">
+                                        <label class="flex items-center gap-1.5 cursor-pointer font-bold">
+                                            <input type="checkbox" x-model="item.missingBottles" class="w-3.5 h-3.5 rounded border-amber-500/40 text-amber-500 bg-gray-950">
+                                            <span><i class="fa-solid fa-wine-bottle"></i> Missing Empty Bottles Charge (+₱<span x-text="formatCurrency((item.bottle_deposit_fee || 10) * item.qty)"></span>)</span>
+                                        </label>
+                                    </div>
+                                </template>
                             </div>
                             
                             <div class="text-right flex items-center gap-3 shrink-0">
@@ -650,18 +690,14 @@
                     <span>Grand Total:</span>
                     <span class="text-accentCyan" x-text="'₱' + formatCurrency(receiptData.total)"></span>
                 </div>
-                <template x-if="receiptData.cash_received > 0">
-                    <div class="flex flex-col gap-1 pt-1.5 border-t border-glassBorder/40">
-                        <div class="flex justify-between text-xs text-gray-300">
-                            <span>Cash Tendered:</span>
-                            <span class="font-bold text-white" x-text="'₱' + formatCurrency(receiptData.cash_received)"></span>
-                        </div>
-                        <div class="flex justify-between text-xs text-accentGreen font-bold">
-                            <span>Sukli (Change):</span>
-                            <span x-text="'₱' + formatCurrency(receiptData.change)"></span>
-                        </div>
-                    </div>
-                </template>
+                <div class="flex justify-between text-xs text-gray-300 font-mono pt-1.5 border-t border-glassBorder/40">
+                    <span>Cash Tendered:</span>
+                    <span class="font-bold text-white" x-text="'₱' + formatCurrency(receiptData.cash_received || receiptData.total)"></span>
+                </div>
+                <div class="flex justify-between text-xs text-accentGreen font-mono font-bold">
+                    <span>Sukli (Change):</span>
+                    <span x-text="'₱' + formatCurrency(receiptData.change || 0)"></span>
+                </div>
             </div>
             
             <!-- Barcode & QR Code Images -->
@@ -727,33 +763,6 @@
             </div>
         </div>
     </div>
-    <!-- MODAL 4: Camera Barcode Scanner -->
-    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
-        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30">
-            <button @click="stopCameraScanner()" class="absolute top-4 right-4 text-gray-550 hover:text-white">
-                <i class="fa-solid fa-circle-xmark text-xl"></i>
-            </button>
-            <h3 class="text-base font-bold text-white mb-4 pb-2 border-b border-glassBorder flex items-center gap-2">
-                <i class="fa-solid fa-camera text-accentCyan"></i> Live Camera Barcode Scanner
-            </h3>
-            
-            <div class="relative w-full overflow-hidden rounded-xl border border-glassBorder bg-gray-950/40 p-1 mb-4">
-                <div id="store-scanner-reader" class="w-full h-64 bg-black/20"></div>
-                
-                <!-- Laser line animation -->
-                <div class="absolute inset-x-0 h-0.5 bg-red-500/80 shadow-md shadow-red-500/50 animate-laser"></div>
-            </div>
-            
-            <p class="text-center text-xs text-gray-400 leading-relaxed mb-4">
-                Position the product barcode inside the camera frame. Ensure adequate lighting.
-            </p>
-            
-            <button @click="stopCameraScanner()" class="w-full bg-gray-850 hover:bg-gray-800 text-white font-bold py-2.5 rounded-xl text-xs transition-all">
-                Cancel / Close Scanner
-            </button>
-        </div>
-    </div>
-
 </div>
 
 <script>
@@ -768,7 +777,7 @@
             searchQuery: '',
             selectedCategory: '',
             selectedBrand: '',
-            showDropdown: false,
+            showSearchDropdown: false,
             
             loyaltyContact: '',
             searchedCustomer: null,
@@ -841,11 +850,11 @@
                 let qty = parseInt(product.buyQty) || 1;
                 if (qty <= 0) return;
                 
-                // Fetch price based on wholesale or retail selection
                 let price = type === 'wholesale' ? parseFloat(product.wholesale_price) : parseFloat(product.retail_price);
                 let total = price * qty;
+                let hasBottleDep = product.has_bottle_deposit || parseFloat(product.bottle_deposit_fee) > 0;
+                let bottleFee = parseFloat(product.bottle_deposit_fee) || 10;
                 
-                // Check if product exists in cart with same price type
                 let existing = this.cart.find(item => item.sku === product.sku && item.priceType === type);
                 if (existing) {
                     existing.qty += qty;
@@ -858,11 +867,14 @@
                         qty: qty,
                         priceType: type,
                         total: total,
-                        image_url: product.image_url
+                        image_url: product.image_url,
+                        has_bottle_deposit: hasBottleDep,
+                        bottle_deposit_fee: bottleFee,
+                        missingBottles: false
                     });
                 }
                 
-                product.buyQty = 1; // reset input
+                product.buyQty = 1;
             },
             
             removeFromCart(index) {
@@ -902,7 +914,26 @@
             },
             
             cartSubtotal() {
-                return this.cart.reduce((sum, item) => sum + item.total, 0);
+                return this.cart.reduce((sum, item) => {
+                    let bottleDepositAdd = item.missingBottles ? (item.bottle_deposit_fee || 10) * item.qty : 0;
+                    return sum + item.total + bottleDepositAdd;
+                }, 0);
+            },
+
+            searchDropdownProducts() {
+                if (!this.searchQuery || !this.searchQuery.trim()) return [];
+                let q = this.searchQuery.toLowerCase().trim();
+                return this.products.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(q)) || 
+                    (p.sku && p.sku.toLowerCase().includes(q)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(q))
+                ).slice(0, 8);
+            },
+
+            selectDropdownProduct(prod) {
+                this.addToCart(prod, 'retail');
+                this.searchQuery = '';
+                this.showSearchDropdown = false;
             },
             
             cartTax() {
@@ -1480,128 +1511,6 @@
 
                 // Clean System Thermal Print Fallback (Zero app launch errors across iOS Safari & Android)
                 this.printReceipt();
-            },
-
-            triggerBarcodeScan() {
-                this.showScannerModal = true;
-                this.$nextTick(() => {
-                    this.startCameraScanner();
-                });
-            },
-            
-            async startCameraScanner() {
-                if (this.scannerHtml5) {
-                    try {
-                        if (this.scannerHtml5.isScanning) {
-                            await this.scannerHtml5.stop();
-                        }
-                    } catch(e) {}
-                    try {
-                        this.scannerHtml5.clear();
-                    } catch(e) {}
-                    this.scannerHtml5 = null;
-                }
-                
-                // Explicitly request specific barcode formats to speed up scanning & improve accuracy
-                const formats = window.Html5QrcodeSupportedFormats ? [
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.QR_CODE
-                ] : undefined;
-                
-                const html5QrCode = new Html5Qrcode("store-scanner-reader", formats ? { formatsToSupport: formats } : undefined);
-                this.scannerHtml5 = html5QrCode;
-                
-                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                    this.handleScannedBarcode(decodedText);
-                };
-                
-                // Set facingMode constraint as the camera identifier
-                const cameraConstraint = { facingMode: "environment" };
-                
-                // Request HD resolution & high framerate for crystal clear barcode recognition
-                // We use ideal constraint values inside videoConstraints so the browser automatically falls back
-                // instead of throwing an OverconstrainedError.
-                const config = {
-                    fps: 15, // 15 FPS is optimal for mobile CPU processing
-                    qrbox: (width, height) => {
-                        // Make it take 85% of width and 70% of height for a much larger scan area
-                        return {
-                            width: Math.min(width * 0.85, 480),
-                            height: Math.min(height * 0.70, 260)
-                        };
-                    },
-                    aspectRatio: 1.7777778,
-                    experimentalFeatures: {
-                        useBarCodeDetectorIfSupported: true // Uses native OS/Browser barcode API (extremely fast & sensitive)
-                    },
-                    videoConstraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: "environment"
-                    }
-                };
-                
-                try {
-                    await html5QrCode.start(cameraConstraint, config, qrCodeSuccessCallback);
-                } catch(err) {
-                    console.error("Storefront camera scan failed completely: ", err);
-                    if (this.products.length > 0) {
-                        let randomProd = this.products[Math.floor(Math.random() * this.products.length)];
-                        this.addToCart(randomProd, 'retail');
-                        alert(`[Camera Access Fallback]\nSimulated scanner read: Barcode of ${randomProd.name}`);
-                    }
-                    this.showScannerModal = false;
-                }
-            },
-            
-            stopCameraScanner() {
-                if (this.scannerHtml5) {
-                    this.scannerHtml5.stop().then(() => {
-                        this.scannerHtml5.clear();
-                        this.scannerHtml5 = null;
-                    }).catch(err => {
-                        console.error("Failed to stop scanner: ", err);
-                        this.scannerHtml5 = null;
-                    });
-                }
-                this.showScannerModal = false;
-            },
-            
-            handleScannedBarcode(barcodeText) {
-                let query = barcodeText.trim();
-                if (!query) return;
-                
-                let prod = this.products.find(p => p.sku === query || (p.barcode && p.barcode === query));
-                if (!prod) {
-                    prod = this.products.find(p => p.sku.toLowerCase() == query.toLowerCase() || (p.barcode && p.barcode.toLowerCase() == query.toLowerCase()));
-                }
-                
-                if (prod) {
-                    if (prod.stock_quantity > 0) {
-                        this.addToCart(prod, 'retail');
-                        
-                        try {
-                            let context = new (window.AudioContext || window.webkitAudioContext)();
-                            let osc = context.createOscillator();
-                            osc.type = "sine";
-                            osc.frequency.setValueAtTime(1000, context.currentTime);
-                            osc.connect(context.destination);
-                            osc.start();
-                            osc.stop(context.currentTime + 0.1);
-                        } catch(e) {}
-                        
-                        this.stopCameraScanner();
-                    } else {
-                        alert(`Product ${prod.name} is out of stock!`);
-                    }
-                } else {
-                    alert(`No product found matching barcode: ${query}`);
-                }
             },
 
             handleStorefrontSearchEnter() {

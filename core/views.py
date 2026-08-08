@@ -1008,6 +1008,9 @@ def api_state(request):
                 image_file = request.FILES.get('image') or request.FILES.get('image_file')
                 image_url_val = data.get("image_url", "").strip() if isinstance(data.get("image_url"), str) else ""
 
+                has_bottle_dep = bool(data.get("has_bottle_deposit", False))
+                bottle_dep_fee = Decimal(str(data.get("bottle_deposit_fee", 0)))
+
                 new_product = Product.objects.create(
                     user=request.user if request.user.is_authenticated else None,
                     sku=sku,
@@ -1021,7 +1024,9 @@ def api_state(request):
                     min_stock=min_stock,
                     max_stock=max_stock,
                     barcode=barcode_str,
-                    supplier=supplier
+                    supplier=supplier,
+                    has_bottle_deposit=has_bottle_dep,
+                    bottle_deposit_fee=bottle_dep_fee
                 )
 
                 if image_file:
@@ -1062,6 +1067,10 @@ def api_state(request):
                     prod.max_stock = int(data.get("max_stock", 100))
                 if "barcode" in data:
                     prod.barcode = str(data.get("barcode", ""))
+                if "has_bottle_deposit" in data:
+                    prod.has_bottle_deposit = bool(data.get("has_bottle_deposit"))
+                if "bottle_deposit_fee" in data:
+                    prod.bottle_deposit_fee = Decimal(str(data.get("bottle_deposit_fee", 0)))
                 
                 brand_id = data.get("brand_id")
                 cat_id = data.get("category_id")

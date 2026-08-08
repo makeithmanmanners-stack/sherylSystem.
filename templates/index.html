@@ -1270,6 +1270,19 @@
                     </div>
                 </div>
                 
+                <div class="col-span-1 md:col-span-2 bg-gray-900/60 p-3 rounded-xl border border-glassBorder flex flex-col gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-accentCyan">
+                        <input type="checkbox" x-model="newHasBottleDeposit" class="w-4 h-4 rounded text-accentCyan border-glassBorder bg-gray-950">
+                        <span><i class="fa-solid fa-wine-bottle"></i> Requires Empty Glass Bottle Deposit / Return (Soft Drinks / Beer)</span>
+                    </label>
+                    <div x-show="newHasBottleDeposit" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                        <div>
+                            <label class="block text-[11px] text-gray-400 font-semibold mb-1">Bottle Deposit Fee Charge per Unit/Bottle (₱)</label>
+                            <input type="number" step="0.01" min="0" x-model.number="newBottleDepositFee" placeholder="e.g. 5.00 or 10.00" class="w-full glass-input rounded px-3 py-1.5 text-xs font-mono font-bold">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-span-1 md:col-span-2">
                     <label class="block text-gray-500 dark:text-gray-400 font-semibold mb-1 flex items-center justify-between">
                         <span><i class="fa-solid fa-paperclip text-accentGreen mr-1"></i> Attach Product Image File</span>
@@ -2438,6 +2451,8 @@
                 this.newBrandId = '';
                 this.newCategoryId = '';
                 this.newSupplierId = '';
+                this.newHasBottleDeposit = false;
+                this.newBottleDepositFee = 0;
                 this.newImageFile = null;
                 this.newImageUrl = '';
                 this.imagePreview = '';
@@ -2481,6 +2496,8 @@
                 formData.append("brand_id", this.newBrandId || '');
                 formData.append("category_id", this.newCategoryId || '');
                 formData.append("supplier_id", this.newSupplierId || '');
+                formData.append("has_bottle_deposit", this.newHasBottleDeposit ? "true" : "false");
+                formData.append("bottle_deposit_fee", parseFloat(this.newBottleDepositFee) || 0);
 
                 if (this.newImageFile) {
                     formData.append("image", this.newImageFile);

@@ -47,6 +47,8 @@ class Product(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
     expiration_date = models.DateField(blank=True, null=True)
     image_url = models.ImageField(upload_to='products/', blank=True, null=True, max_length=500, verbose_name="Attach files")
+    has_bottle_deposit = models.BooleanField(default=False, verbose_name="Requires Glass Bottle Deposit/Return")
+    bottle_deposit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Deposit Charge Fee per Bottle")
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
