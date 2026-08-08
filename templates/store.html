@@ -317,7 +317,12 @@
                     <h3 class="font-bold text-lg text-white flex items-center gap-2">
                         <i class="fa-solid fa-cart-shopping text-accentBlue"></i> Shopping Cart
                     </h3>
-                    <span class="text-xs bg-accentBlue/20 text-accentBlue px-2 py-0.5 rounded-full font-bold" x-text="cart.length + ' types'"></span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-accentBlue/20 text-accentBlue px-2 py-0.5 rounded-full font-bold" x-text="cart.length + ' types'"></span>
+                        <button type="button" @click="clearCart()" x-show="cart.length > 0" class="text-[10px] text-red-400 hover:text-red-300 font-bold px-2 py-0.5 bg-red-950/40 hover:bg-red-900/60 rounded border border-red-500/30 transition-colors">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Clear Cart
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Cart Items List -->
@@ -342,10 +347,15 @@
                             </div>
                             
                             <div class="flex-grow min-w-0">
-                                <h4 class="font-bold text-white truncate" x-text="item.name"></h4>
-                                <div class="flex items-center gap-2 mt-0.5">
+                                <h4 class="font-bold text-white truncate text-xs" x-text="item.name"></h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <div class="flex items-center border border-glassBorder rounded-lg bg-gray-950/80 overflow-hidden">
+                                        <button type="button" @click="updateCartQty(index, -1)" class="px-2 py-0.5 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors font-bold text-xs">-</button>
+                                        <span class="px-2 py-0.5 text-xs font-bold text-white font-mono" x-text="item.qty"></span>
+                                        <button type="button" @click="updateCartQty(index, 1)" class="px-2 py-0.5 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors font-bold text-xs">+</button>
+                                    </div>
                                     <span class="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase" :class="item.priceType === 'wholesale' ? 'bg-accentCyan/15 text-accentCyan' : 'bg-gray-800 text-gray-400'" x-text="item.priceType"></span>
-                                    <span class="text-gray-500 font-semibold" x-text="item.qty + 'x ₱' + formatCurrency(item.price)"></span>
+                                    <span class="text-gray-400 font-mono text-[11px]" x-text="'@ ₱' + formatCurrency(item.price)"></span>
                                 </div>
                             </div>
                             
@@ -496,6 +506,42 @@
                     </div>
                 </div>
 
+                <!-- Fast Cash Presets & Change Calculator -->
+                <div class="bg-gray-950/60 p-3 rounded-xl border border-glassBorder flex flex-col gap-2">
+                    <label class="block text-gray-400 font-semibold text-[11px]">
+                        <i class="fa-solid fa-money-bill-wave text-accentGreen mr-1"></i> Cash Tendered & Change Calculator (Sukli)
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" x-model.number="checkoutCashReceived" placeholder="Enter cash received..." class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono font-bold" @keydown.enter.prevent="executeSubmitOrder()">
+                    </div>
+                    <!-- Presets -->
+                    <div class="flex flex-wrap gap-1.5 mt-1">
+                        <button type="button" @click="quickCashReceived('exact')" class="px-2.5 py-1 bg-accentBlue/20 hover:bg-accentBlue/30 text-accentBlue border border-accentBlue/30 rounded-lg text-[10px] font-bold transition-all">
+                            Exact (₱<span x-text="formatCurrency(cartTotal())"></span>)
+                        </button>
+                        <button type="button" @click="quickCashReceived(50)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[10px] font-bold transition-all">
+                            ₱50
+                        </button>
+                        <button type="button" @click="quickCashReceived(100)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[10px] font-bold transition-all">
+                            ₱100
+                        </button>
+                        <button type="button" @click="quickCashReceived(200)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[10px] font-bold transition-all">
+                            ₱200
+                        </button>
+                        <button type="button" @click="quickCashReceived(500)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[10px] font-bold transition-all">
+                            ₱500
+                        </button>
+                        <button type="button" @click="quickCashReceived(1000)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-[10px] font-bold transition-all">
+                            ₱1,000
+                        </button>
+                    </div>
+                    <!-- Calculated Change Display -->
+                    <div class="flex justify-between items-center pt-2 border-t border-glassBorder/40 text-xs">
+                        <span class="text-gray-400 font-medium">Sukli (Change):</span>
+                        <span class="font-extrabold font-mono text-sm" :class="checkoutChange >= 0 ? 'text-accentGreen' : 'text-red-400'" x-text="'₱' + formatCurrency(checkoutChange)"></span>
+                    </div>
+                </div>
+
                 <p class="text-[11px] text-gray-400 text-center">
                     <i class="fa-solid fa-circle-info text-accentBlue mr-1"></i> Draft orders are saved instantly and sent to cashier POS for posting.
                 </p>
@@ -604,6 +650,18 @@
                     <span>Grand Total:</span>
                     <span class="text-accentCyan" x-text="'₱' + formatCurrency(receiptData.total)"></span>
                 </div>
+                <template x-if="receiptData.cash_received > 0">
+                    <div class="flex flex-col gap-1 pt-1.5 border-t border-glassBorder/40">
+                        <div class="flex justify-between text-xs text-gray-300">
+                            <span>Cash Tendered:</span>
+                            <span class="font-bold text-white" x-text="'₱' + formatCurrency(receiptData.cash_received)"></span>
+                        </div>
+                        <div class="flex justify-between text-xs text-accentGreen font-bold">
+                            <span>Sukli (Change):</span>
+                            <span x-text="'₱' + formatCurrency(receiptData.change)"></span>
+                        </div>
+                    </div>
+                </template>
             </div>
             
             <!-- Barcode & QR Code Images -->
@@ -720,6 +778,7 @@
             checkoutCustomerId: "{{ logged_customer.id|default:'' }}",
             checkoutPaymentMethod: 'Cash',
             checkoutRoute: '',
+            checkoutCashReceived: 0,
             
             isSubmitting: false,
             showConfirmOrderModal: false,
@@ -810,6 +869,38 @@
                 this.cart.splice(index, 1);
             },
             
+            updateCartQty(index, delta) {
+                if (this.cart[index]) {
+                    this.cart[index].qty += delta;
+                    if (this.cart[index].qty <= 0) {
+                        this.cart.splice(index, 1);
+                    } else {
+                        this.cart[index].total = this.cart[index].qty * this.cart[index].price;
+                    }
+                }
+            },
+
+            clearCart() {
+                if (this.cart.length === 0) return;
+                if (confirm("Are you sure you want to clear all items in the cart?")) {
+                    this.cart = [];
+                }
+            },
+
+            quickCashReceived(val) {
+                if (val === 'exact') {
+                    this.checkoutCashReceived = this.cartTotal();
+                } else {
+                    this.checkoutCashReceived = parseFloat(val);
+                }
+            },
+
+            get checkoutChange() {
+                let cash = parseFloat(this.checkoutCashReceived) || 0;
+                let total = this.cartTotal();
+                return cash >= total ? cash - total : 0;
+            },
+            
             cartSubtotal() {
                 return this.cart.reduce((sum, item) => sum + item.total, 0);
             },
@@ -893,6 +984,9 @@
                     if (resData.success) {
                         // Populate checkout receipt details
                         let selectedCust = this.customers.find(c => c.id == this.checkoutCustomerId);
+                        let cashReceivedVal = parseFloat(this.checkoutCashReceived) || total;
+                        let changeVal = this.checkoutChange;
+
                         this.receiptData = {
                             min: this.generateReceiptMin(),
                             serial_no: this.generateReceiptSerial(),
@@ -901,6 +995,8 @@
                             route: this.checkoutRoute,
                             method: this.checkoutPaymentMethod,
                             total: total,
+                            cash_received: cashReceivedVal,
+                            change: changeVal,
                             items: [...this.cart],
                             date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
                             time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -910,6 +1006,7 @@
                         this.cart = []; // clear cart
                         this.checkoutCustomerId = '';
                         this.checkoutRoute = '';
+                        this.checkoutCashReceived = 0;
                         this.loadState(); // reload catalog stock levels
                     } else {
                         alert("Error submitting order: " + resData.error);
