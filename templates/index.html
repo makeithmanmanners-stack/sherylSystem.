@@ -953,17 +953,35 @@
                     </button>
                 </div>
                 
-                <!-- Audit logs list -->
-                <div class="border border-glassBorder p-4 rounded-xl bg-gray-900/20">
-                    <h4 class="font-bold text-xs text-accentCyan uppercase mb-3"><i class="fa-solid fa-receipt mr-1"></i> Audit Activity Trail</h4>
-                    <div class="overflow-y-auto max-h-[300px] flex flex-col gap-2 font-mono text-[10px]">
-                        <template x-for="log in audit_logs" :key="log.id">
-                            <div class="bg-gray-950 p-2.5 rounded border border-glassBorder flex flex-col gap-1">
+                <!-- Audit logs list (Account Isolated Activity Trail) -->
+                <div class="border border-glassBorder p-4 rounded-xl bg-gray-900/20 flex flex-col">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-glassBorder">
+                        <h4 class="font-bold text-xs text-accentCyan uppercase flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-accentCyan"></i> Your Account Activity Trail
+                        </h4>
+                        <span class="text-[10px] text-gray-400 font-mono bg-gray-950 px-2 py-0.5 rounded border border-glassBorder" x-text="audit_logs.length + ' logs'"></span>
+                    </div>
+                    <div class="overflow-y-auto max-h-[320px] flex flex-col gap-2 font-mono text-[10px] pr-1">
+                        <template x-for="log in audit_logs" :key="log.id || Math.random()">
+                            <div class="bg-gray-950 p-2.5 rounded-xl border border-glassBorder flex flex-col gap-1 hover:border-accentBlue/40 transition-colors">
                                 <div class="flex justify-between items-center text-gray-400">
-                                    <span class="font-bold" x-text="'[' + log.module + '] ' + log.action"></span>
-                                    <span x-text="log.timestamp"></span>
+                                    <span class="font-extrabold text-accentCyan flex items-center gap-1">
+                                        <i class="fa-solid fa-shield-halved text-[9px]"></i>
+                                        <span x-text="'[' + log.module + '] ' + log.action"></span>
+                                    </span>
+                                    <span class="text-[9px] text-gray-500" x-text="log.timestamp ? log.timestamp.replace('T', ' ').slice(0, 16) : ''"></span>
                                 </div>
-                                <div class="text-gray-300" x-text="log.details"></div>
+                                <div class="text-gray-200 leading-snug font-sans text-[11px]" x-text="log.details"></div>
+                                <div class="flex items-center justify-between mt-0.5 pt-1 border-t border-white/5 text-[9px] text-gray-400">
+                                    <span>Account User: <b class="text-white" x-text="log.user || 'system'"></b></span>
+                                    <span class="text-emerald-400 font-bold">● Isolated</span>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="audit_logs.length === 0">
+                            <div class="p-8 text-center text-gray-500 font-sans text-xs">
+                                <i class="fa-solid fa-folder-open text-2xl mb-2 block opacity-40"></i>
+                                No activity recorded yet for your account.
                             </div>
                         </template>
                     </div>

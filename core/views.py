@@ -59,6 +59,17 @@ def serialize_model(model_obj):
             data[field.name] = str(val)
     return data
 
+def log_audit(request, action, module, details):
+    user_obj = request.user if (request and hasattr(request, 'user') and request.user.is_authenticated) else None
+    username_str = user_obj.username if user_obj else "system"
+    AuditLog.objects.create(
+        account_user=user_obj,
+        user=username_str,
+        action=action,
+        module=module,
+        details=details
+    )
+
 def store_context(request):
     store_name = "SHEYDE SARI-SARI STORE"
     user_plan = "Guest"
@@ -163,6 +174,7 @@ def get_current_state(request=None):
         trip_qs = Trip.objects.filter(user=curr_user).order_by('-date')
         po_qs = PurchaseOrder.objects.filter(user=curr_user).order_by('-date')
         exp_qs = Expense.objects.filter(user=curr_user).order_by('-date')
+        audit_qs = AuditLog.objects.filter(Q(account_user=curr_user) | Q(user=curr_user.username)).order_by('-timestamp')[:50]
     else:
         cat_qs = Category.objects.all()
         brand_qs = Brand.objects.all()
@@ -174,6 +186,7 @@ def get_current_state(request=None):
         trip_qs = Trip.objects.order_by('-date')
         po_qs = PurchaseOrder.objects.order_by('-date')
         exp_qs = Expense.objects.order_by('-date')
+        audit_qs = AuditLog.objects.order_by('-timestamp')[:50]
 
     state = {
         "user_plan": user_plan,
@@ -185,7 +198,7 @@ def get_current_state(request=None):
         "employees": [serialize_model(e) for e in emp_qs],
         "expenses": [serialize_model(e) for e in exp_qs],
         "subscriptions": [serialize_model(s) for s in Subscription.objects.order_by('-created_at')],
-        "audit_logs": [serialize_model(a) for a in AuditLog.objects.order_by('-timestamp')[:50]],
+        "audit_logs": [serialize_model(a) for a in audit_qs],
     }
     
     # Products
@@ -517,8 +530,8 @@ def api_state(request):
                             prod.stock_quantity -= qty
                             prod.save()
                 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Create Sale",
                     module="Sales",
                     details=f"Created Invoice {invoice_no} worth PHP {total:.2f}. Method: {method}. Status: {status}."
@@ -546,8 +559,8 @@ def api_state(request):
                             sale.customer.credit_balance += sale.total
                         sale.customer.save()
                         
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Approve Draft Order",
                         module="Sales",
                         details=f"Approved and posted draft order {sale.invoice_no} for {sale.customer.name if sale.customer else 'Walk-in'}."
@@ -591,8 +604,8 @@ def api_state(request):
                         prod.stock_quantity -= qty_loaded
                         prod.save()
 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Create Dispatch Trip",
                     module="Logistics",
                     details=f"Created trip #{trip.id} to route '{route}' using {truck_id}."
@@ -604,8 +617,8 @@ def api_state(request):
                 if trip:
                     trip.status = "Dispatched"
                     trip.save()
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Dispatch Trip",
                         module="Logistics",
                         details=f"Dispatched trip #{trip.id} to route '{trip.route}'."
@@ -617,8 +630,8 @@ def api_state(request):
                 if trip:
                     trip.status = "Delivered"
                     trip.save()
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Deliver Trip",
                         module="Logistics",
                         details=f"Driver marked trip #{trip.id} as Delivered."
@@ -677,8 +690,8 @@ def api_state(request):
                         sm.incentives += route_sales_total * Decimal("0.02")
                         sm.save()
 
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Reconcile Trip",
                         module="Logistics",
                         details=f"Reconciled trip #{trip.id}. Predicted Cash: {cash_predicted:.2f}, Collected: {cash_collected:.2f}, Shortage: {shortage:.2f}."
@@ -695,8 +708,8 @@ def api_state(request):
                     customer.credit_balance -= amount
                     customer.save()
                     
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Post Customer Payment",
                         module="Cashier",
                         details=f"Received PHP {amount:.2f} from {customer.name} via {method}. Ref: {ref}."
@@ -736,8 +749,8 @@ def api_state(request):
                     supplier.outstanding_balance += total
                     supplier.save()
 
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Create Purchase Order",
                         module="Purchase Orders",
                         details=f"Created PO {po_no} for {supplier.name} totaling PHP {total:.2f}."
@@ -770,8 +783,8 @@ def api_state(request):
                     sub.approved_at = timezone.now()
                     sub.save()
                     
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "admin",
+                    log_audit(
+                        request,
                         action="Approve Subscription",
                         module="Subscriptions",
                         details=f"Approved GCash subscription for {sub.name} ({sub.username}). Plan: {sub.plan_name}, GCash Ref: {sub.gcash_reference}."
@@ -787,8 +800,8 @@ def api_state(request):
                     sub.admin_notes = notes
                     sub.save()
                     
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "admin",
+                    log_audit(
+                        request,
                         action="Reject Subscription",
                         module="Subscriptions",
                         details=f"Rejected subscription for {sub.name} ({sub.username}). Reason: {notes}."
@@ -850,8 +863,8 @@ def api_state(request):
                     elif not is_admin:
                         Customer.objects.create(user=user, name=store_name_val, email=email_val or user.email)
 
-                AuditLog.objects.create(
-                    user=user.username,
+                log_audit(
+                    request,
                     action="Update System Settings",
                     module="Settings",
                     details=f"Updated Account & Store Settings: Store Name: '{store_name_val}', Email: '{email_val}', Password {'updated' if new_password else 'unchanged'}."
@@ -871,8 +884,8 @@ def api_state(request):
                         prod.stock_quantity += item.qty
                         prod.save()
                         
-                    AuditLog.objects.create(
-                        user=request.user.username if request.user.is_authenticated else "system",
+                    log_audit(
+                        request,
                         action="Receive Purchase Order",
                         module="Purchase Orders",
                         details=f"Received PO {po.po_no}. Added products to inventory."
@@ -902,8 +915,8 @@ def api_state(request):
                     emp.deductions = Decimal("0.00")
                     emp.save()
                 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Release Salaries",
                     module="Payroll",
                     details=f"Processed payroll release for all employees. Total: PHP {total_payroll:.2f} recorded in expenses."
@@ -922,8 +935,8 @@ def api_state(request):
                     date=datetime.strptime(exp_date, "%Y-%m-%d").date()
                 )
                 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Create Expense",
                     module="Accounting",
                     details=f"Recorded expense under '{cat}' worth PHP {amt:.2f}."
@@ -940,8 +953,8 @@ def api_state(request):
                     name=cat_name,
                     description=desc
                 )
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Create Category",
                     module="Products",
                     details=f"Created product category '{cat_name}'."
@@ -951,8 +964,8 @@ def api_state(request):
             elif action == "delete_category":
                 cat_id = data.get("category_id")
                 Category.objects.filter(id=cat_id).delete()
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Delete Category",
                     module="Products",
                     details=f"Deleted product category ID {cat_id}."
@@ -1011,8 +1024,8 @@ def api_state(request):
                     new_product.image_url = image_url_val
                     new_product.save()
                 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Add Product",
                     module="Products",
                     details=f"Added new product {name} ({sku}) with initial stock of {stock_qty} cases to catalog."
@@ -1064,8 +1077,8 @@ def api_state(request):
 
                 prod.save()
 
-                AuditLog.objects.create(
-                    user=request.user.username if request.user.is_authenticated else "system",
+                log_audit(
+                    request,
                     action="Update Product",
                     module="Products",
                     details=f"Updated product details and image for {prod.name} ({sku})."

@@ -169,6 +169,7 @@ class Expense(models.Model):
         return f"{self.category} - {self.amount} ({self.date})"
 
 class AuditLog(models.Model):
+    account_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
     user = models.CharField(max_length=150, default='system')
     action = models.CharField(max_length=100)
     module = models.CharField(max_length=100)
