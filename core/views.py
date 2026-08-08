@@ -1084,6 +1084,50 @@ def api_state(request):
                     details=f"Updated product details and image for {prod.name} ({sku})."
                 )
 
+            elif action == "delete_product":
+                sku = str(data.get("sku", "")).strip()
+                prod_id = data.get("product_id")
+                prod = None
+                if sku:
+                    prod = Product.objects.filter(sku=sku).first()
+                elif prod_id:
+                    prod = Product.objects.filter(id=prod_id).first()
+                
+                if prod:
+                    prod_name = prod.name
+                    prod_sku = prod.sku
+                    prod.delete()
+                    log_audit(
+                        request,
+                        action="Delete Product",
+                        module="Products",
+                        details=f"Deleted product '{prod_name}' ({prod_sku}) from inventory catalog."
+                    )
+                    return JsonResponse({"success": True, "message": f"Product '{prod_name}' deleted successfully!", "state": get_current_state(request)})
+                return JsonResponse({"success": False, "error": "Product not found."})
+
+            elif action == "delete_sale":
+                invoice_no = str(data.get("invoice_no", "")).strip()
+                sale_id = data.get("sale_id")
+                sale = None
+                if invoice_no:
+                    sale = Sale.objects.filter(invoice_no=invoice_no).first()
+                elif sale_id:
+                    sale = Sale.objects.filter(id=sale_id).first()
+                
+                if sale:
+                    inv = sale.invoice_no
+                    tot = sale.total
+                    sale.delete()
+                    log_audit(
+                        request,
+                        action="Delete Sale Record",
+                        module="Sales Ledger",
+                        details=f"Deleted order record {inv} worth PHP {tot:.2f} from sales ledger."
+                    )
+                    return JsonResponse({"success": True, "message": f"Sale order '{inv}' deleted successfully!", "state": get_current_state(request)})
+                return JsonResponse({"success": False, "error": "Sale record not found."})
+
             return JsonResponse({"success": True, "state": get_current_state()})
 
         except Exception as e:

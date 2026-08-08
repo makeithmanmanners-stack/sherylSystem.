@@ -717,6 +717,7 @@
                             <th class="p-3 text-right">Grand Total</th>
                             <th class="p-3 text-center">Status</th>
                             <th class="p-3">Ordered Items</th>
+                            <th class="p-3 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-glassBorder/40">
@@ -739,11 +740,16 @@
                                         <span class="block font-mono" x-text="'- ' + (item.product_name || item.product_sku) + ' x' + item.qty"></span>
                                     </template>
                                 </td>
+                                <td class="p-3 text-center">
+                                    <button type="button" @click="deleteSale(sale.invoice_no)" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-500/30 px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 mx-auto">
+                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                    </button>
+                                </td>
                             </tr>
                         </template>
                         <template x-if="filteredLedgerSales().length === 0">
                             <tr>
-                                <td colspan="7" class="p-8 text-center text-gray-500 font-semibold">
+                                <td colspan="8" class="p-8 text-center text-gray-500 font-semibold">
                                     No sales or customer orders found for this timeframe (<span x-text="salesFilterPeriod"></span>).
                                 </td>
                             </tr>
@@ -871,6 +877,7 @@
                                 <th class="p-3 text-right">Grand Total</th>
                                 <th class="p-3 text-center">Status</th>
                                 <th class="p-3">Ordered Items</th>
+                                <th class="p-3 text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-glassBorder/40">
@@ -893,11 +900,16 @@
                                             <span class="block font-mono" x-text="'- ' + (item.product_name || item.product_sku) + ' x' + item.qty"></span>
                                         </template>
                                     </td>
+                                    <td class="p-3 text-center">
+                                        <button type="button" @click="deleteSale(sale.invoice_no)" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-500/30 px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 mx-auto">
+                                            <i class="fa-solid fa-trash-can"></i> Delete
+                                        </button>
+                                    </td>
                                 </tr>
                             </template>
                             <template x-if="filteredLedgerSales().length === 0">
                                 <tr>
-                                    <td colspan="7" class="p-8 text-center text-gray-500 font-semibold">
+                                    <td colspan="8" class="p-8 text-center text-gray-500 font-semibold">
                                         No sales or customer orders found for this timeframe (<span x-text="salesFilterPeriod"></span>).
                                     </td>
                                 </tr>
@@ -1091,9 +1103,14 @@
                                     <td class="p-3 text-center text-gray-400" x-text="p.min_stock + ' / ' + p.max_stock"></td>
                                     <td class="p-3 text-gray-400 font-mono" x-text="p.expiration_date || 'N/A'"></td>
                                     <td class="p-3 text-center">
-                                        <button @click="openEditProductModal(p)" class="bg-gray-800 hover:bg-accentBlue/20 text-gray-300 hover:text-accentCyan border border-glassBorder hover:border-accentBlue/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1 mx-auto">
-                                            <i class="fa-solid fa-pen-to-square"></i> Edit
-                                        </button>
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button type="button" @click="openEditProductModal(p)" class="bg-gray-800 hover:bg-accentBlue/20 text-gray-300 hover:text-accentCyan border border-glassBorder hover:border-accentBlue/30 px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                                            </button>
+                                            <button type="button" @click="deleteProduct(p.sku, p.name)" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-500/30 px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1">
+                                                <i class="fa-solid fa-trash-can"></i> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
@@ -2337,6 +2354,48 @@
                     }
                 } catch(e) {
                     console.error("Error deleting category: ", e);
+                }
+            },
+
+            async deleteProduct(sku, name) {
+                if (!confirm(`Are you sure you want to delete product '${name || sku}' from inventory catalog?`)) return;
+                try {
+                    let res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delete_product', sku: sku })
+                    });
+                    let data = await res.json();
+                    if (data.success) {
+                        alert(data.message || "✅ Product deleted successfully!");
+                        this.loadAdminState();
+                    } else {
+                        alert("Error deleting product: " + (data.error || "Failed"));
+                    }
+                } catch(e) {
+                    console.error("Delete product error:", e);
+                    alert("Network error deleting product.");
+                }
+            },
+
+            async deleteSale(invoiceNo) {
+                if (!confirm(`Are you sure you want to delete transaction '${invoiceNo}' from sales ledger?`)) return;
+                try {
+                    let res = await fetch('/api/state/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delete_sale', invoice_no: invoiceNo })
+                    });
+                    let data = await res.json();
+                    if (data.success) {
+                        alert(data.message || "✅ Order record deleted from sales ledger!");
+                        this.loadAdminState();
+                    } else {
+                        alert("Error deleting sale: " + (data.error || "Failed"));
+                    }
+                } catch(e) {
+                    console.error("Delete sale error:", e);
+                    alert("Network error deleting sale.");
                 }
             },
             
