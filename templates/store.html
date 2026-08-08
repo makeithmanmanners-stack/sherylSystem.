@@ -323,9 +323,9 @@
 
                         <!-- Bottle Deposit Charge Fee Badge -->
                         <template x-if="prod.has_bottle_deposit || parseFloat(prod.bottle_deposit_fee) > 0">
-                            <div class="mt-2.5 bg-amber-950/50 border border-amber-500/40 p-2 rounded-xl text-[10px] font-bold text-amber-300 flex items-center justify-between shadow-sm">
-                                <span><i class="fa-solid fa-wine-bottle mr-1 text-amber-400"></i> Deposit Charge Fee per Bottle:</span>
-                                <span class="font-mono text-amber-200 font-black text-xs" x-text="'₱' + formatCurrency(prod.bottle_deposit_fee || 10)"></span>
+                            <div class="mt-2.5 bg-gradient-to-r from-amber-950/80 to-amber-900/40 border border-amber-500/60 p-2.5 rounded-xl text-[11px] font-bold text-amber-300 flex items-center justify-between shadow-md">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-wine-bottle text-amber-400 text-xs"></i> Deposit Charge Fee per Bottle:</span>
+                                <span class="font-mono text-amber-200 font-black text-xs bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40" x-text="'₱' + formatCurrency(prod.bottle_deposit_fee || 10)"></span>
                             </div>
                         </template>
                     </div>
@@ -563,7 +563,13 @@
                         <i class="fa-solid fa-money-bill-wave text-accentGreen mr-1"></i> Cash Tendered & Change Calculator (Sukli)
                     </label>
                     <div class="flex items-center gap-2">
-                        <input type="number" x-model.number="checkoutCashReceived" placeholder="Enter cash received..." class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono font-bold" @keydown.enter.prevent="executeSubmitOrder()">
+                        <input type="number" 
+                               x-model.number="checkoutCashReceived" 
+                               @input="recalcChange()"
+                               @keyup="recalcChange()"
+                               placeholder="Enter cash received..." 
+                               class="w-full glass-input rounded-xl px-3 py-2 text-xs font-mono font-bold text-white bg-gray-900 border border-glassBorder focus:border-accentGreen focus:ring-1 focus:ring-accentGreen" 
+                               @keydown.enter.prevent="executeSubmitOrder()">
                     </div>
                     <!-- Presets -->
                     <div class="flex flex-wrap gap-1.5 mt-1">
@@ -589,7 +595,7 @@
                     <!-- Calculated Change Display -->
                     <div class="flex justify-between items-center pt-2 border-t border-glassBorder/40 text-xs">
                         <span class="text-gray-400 font-medium">Sukli (Change):</span>
-                        <span class="font-extrabold font-mono text-sm" :class="checkoutChange >= 0 ? 'text-accentGreen' : 'text-red-400'" x-text="'₱' + formatCurrency(checkoutChange)"></span>
+                        <span class="font-extrabold font-mono text-sm" :class="calculatedSukli >= 0 ? 'text-accentGreen' : 'text-red-400'" x-text="'₱' + formatCurrency(calculatedSukli)"></span>
                     </div>
                 </div>
 
@@ -835,9 +841,22 @@
                     this.brands = data.brands || [];
                     this.customers = data.customers || [];
                     
-                    // Initialize buyQty for UI on products list
+                    // Initialize buyQty and bottle deposit defaults for UI on products list
                     this.products = (data.products || []).map(p => {
                         p.buyQty = 1;
+                        let catName = (p.category_name || p.category || '').toString().toLowerCase();
+                        let nameStr = (p.name || '').toString().toLowerCase();
+                        let isBottleProduct = p.has_bottle_deposit || parseFloat(p.bottle_deposit_fee) > 0 || 
+                                              catName.includes('beverage') || catName.includes('soft') || catName.includes('drink') ||
+                                              nameStr.includes('coca') || nameStr.includes('coke') || nameStr.includes('pepsi') || 
+                                              nameStr.includes('beer') || nameStr.includes('bottle') || nameStr.includes('san miguel') ||
+                                              nameStr.includes('royal') || nameStr.includes('sprite') || nameStr.includes('gin') || nameStr.includes('1.5l');
+                        if (isBottleProduct) {
+                            p.has_bottle_deposit = true;
+                            if (!p.bottle_deposit_fee || parseFloat(p.bottle_deposit_fee) <= 0) {
+                                p.bottle_deposit_fee = 10.00;
+                            }
+                        }
                         return p;
                     });
                 } catch (e) {
@@ -910,18 +929,29 @@
                 }
             },
 
+            checkoutCashReceived: 0,
+            calculatedSukli: 0,
+
+            recalcChange() {
+                let cash = parseFloat(this.checkoutCashReceived) || 0;
+                let total = this.cartTotal();
+                this.calculatedSukli = cash >= total ? (cash - total) : 0;
+            },
+
             quickCashReceived(val) {
                 if (val === 'exact') {
                     this.checkoutCashReceived = this.cartTotal();
                 } else {
                     this.checkoutCashReceived = parseFloat(val);
                 }
+                this.recalcChange();
             },
 
-            get checkoutChange() {
-                let cash = parseFloat(this.checkoutCashReceived) || 0;
-                let total = this.cartTotal();
-                return cash >= total ? cash - total : 0;
+            openOrderConfirmModal() {
+                if (this.cart.length === 0) return;
+                this.checkoutCashReceived = this.cartTotal();
+                this.recalcChange();
+                this.showConfirmOrderModal = true;
             },
             
             cartSubtotal() {
@@ -1027,7 +1057,7 @@
                         // Populate checkout receipt details
                         let selectedCust = this.customers.find(c => c.id == this.checkoutCustomerId);
                         let cashReceivedVal = parseFloat(this.checkoutCashReceived) || total;
-                        let changeVal = this.checkoutChange;
+                        let changeVal = this.calculatedSukli;
 
                         this.receiptData = {
                             min: this.generateReceiptMin(),

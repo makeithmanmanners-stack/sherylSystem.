@@ -212,12 +212,25 @@ def get_current_state(request=None):
     products = []
     for p in prod_qs:
         p_data = serialize_model(p)
+        cat_name = p.category.name if p.category else ""
         p_data["category_id"] = p.category.id if p.category else None
-        p_data["category_name"] = p.category.name if p.category else ""
+        p_data["category_name"] = cat_name
         p_data["brand_id"] = p.brand.id if p.brand else None
         p_data["brand_name"] = p.brand.name if p.brand else ""
         p_data["supplier_id"] = p.supplier.id if p.supplier else None
         p_data["supplier_name"] = p.supplier.name if p.supplier else ""
+
+        # Default bottle deposit fee for beverage/bottle products
+        name_lower = (p.name or "").lower()
+        cat_lower = cat_name.lower()
+        is_beverage_or_bottle = ("beverage" in cat_lower or "soft" in cat_lower or "drink" in cat_lower or 
+                                 "coca" in name_lower or "coke" in name_lower or "pepsi" in name_lower or 
+                                 "beer" in name_lower or "bottle" in name_lower or "san miguel" in name_lower or
+                                 "royal" in name_lower or "sprite" in name_lower or "gin" in name_lower)
+        if is_beverage_or_bottle and not p_data.get("has_bottle_deposit") and float(p_data.get("bottle_deposit_fee") or 0) == 0:
+            p_data["has_bottle_deposit"] = True
+            p_data["bottle_deposit_fee"] = 10.00
+        
         products.append(p_data)
     state["products"] = products
 
