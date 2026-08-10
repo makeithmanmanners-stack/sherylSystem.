@@ -6,7 +6,7 @@
     <!-- Sidebar Navigation -->
     <aside class="glass-card p-4 md:w-64 flex flex-col justify-between gap-6 shrink-0 shadow-lg">
         <div class="flex flex-col gap-2">
-            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">Modules</div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">Admin Navigation</div>
             
             <template x-for="tab in tabs" :key="tab.id">
                 <button @click="switchTab(tab.id)" :class="activeTab === tab.id ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left">
@@ -17,98 +17,20 @@
             
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
-            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
+            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
                 <i class="fa-solid fa-globe w-5 text-center text-sm text-accentCyan"></i>
                 <span class="font-medium">POS Storefront</span>
             </a>
             
-            <a href="/admin/" x-show="userPlan === 'Admin' || userPlan === 'Khertadmin'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-gray-850 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
-                <i class="fa-brands fa-python w-5 text-center text-sm text-accentCyan"></i>
-                <span class="font-medium">Django Admin</span>
+            <a href="/admin/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-purple-200 hover:text-white hover:bg-purple-800/50 transition-all text-left shadow-sm">
+                <i class="fa-solid fa-shield-halved w-5 text-center text-sm text-purple-400"></i>
+                <span class="font-extrabold">Django Admin Panel</span>
             </a>
-        </div>
-        
-        <!-- Quick Stats Widget -->
-        <div class="bg-gray-900/60 p-3.5 rounded-2xl border border-glassBorder text-xs flex flex-col gap-2.5">
-            <div class="flex items-center gap-2 text-accentCyan">
-                <i class="fa-solid fa-bell-ring animate-bounce"></i>
-                <span class="font-bold tracking-wide uppercase text-[10px]">Critical Alerts</span>
-            </div>
-            <div class="flex justify-between items-center text-gray-400">
-                <span>Low stock products:</span>
-                <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-extrabold" x-text="criticalProductsCount()"></span>
-            </div>
-            <div class="flex justify-between items-center text-gray-400">
-                <span>Pending drafts:</span>
-                <span class="bg-accentBlue/20 text-accentBlue px-2 py-0.5 rounded font-extrabold" x-text="pendingDraftsCount()"></span>
-            </div>
-        </div>
-
-        <!-- Bluetooth Thermal Printer Sidebar Widget -->
-        <div class="bg-gray-900/60 p-3 rounded-2xl border border-glassBorder text-xs flex flex-col gap-2">
-            <div class="flex items-center justify-between text-accentBlue">
-                <div class="flex items-center gap-1.5 font-bold uppercase text-[10px] tracking-wide">
-                    <i class="fa-solid fa-print"></i>
-                    <span>Thermal Printer</span>
-                </div>
-                <span :class="btPrinterConnected ? 'bg-accentGreen/20 text-accentGreen border-accentGreen/30' : 'bg-gray-800 text-gray-400 border-glassBorder'" class="px-1.5 py-0.5 rounded border text-[9px] font-extrabold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full" :class="btPrinterConnected ? 'bg-accentGreen animate-pulse' : 'bg-gray-500'"></span>
-                    <span x-text="btPrinterConnected ? 'CONNECTED' : 'OFFLINE'"></span>
-                </span>
-            </div>
-            <div class="text-[10px] text-gray-400 truncate font-mono" x-text="btPrinterConnected ? btPrinterName : 'No printer paired'"></div>
-            <div class="flex gap-1.5 mt-0.5">
-                <template x-if="!btPrinterConnected">
-                    <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 active:scale-95 text-white font-bold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
-                        <i class="fa-solid fa-bluetooth"></i> Connect Bluetooth
-                    </button>
-                </template>
-                <template x-if="btPrinterConnected">
-                    <div class="grid grid-cols-2 gap-1.5 w-full">
-                        <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold py-2 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
-                            <i class="fa-solid fa-vial"></i> Test Print
-                        </button>
-                        <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 active:scale-95 text-red-300 font-bold py-2 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
-                            <i class="fa-solid fa-power-off"></i> Off
-                        </button>
-                    </div>
-                </template>
-            </div>
         </div>
     </aside>
 
     <!-- Main Workspace Content -->
     <div class="flex-grow flex flex-col gap-4 relative">
-        
-        <!-- Mobile Sticky Bluetooth Printer Header Bar (Visible on mobile screens) -->
-        <div class="md:hidden bg-gray-900/95 backdrop-blur-md p-3 rounded-2xl border border-glassBorder flex items-center justify-between text-xs mb-1 shadow-xl sticky top-2 z-50">
-            <div class="flex items-center gap-2 min-w-0">
-                <div class="w-3 h-3 rounded-full shrink-0" :class="btPrinterConnected ? 'bg-accentGreen shadow-sm shadow-accentGreen/50 animate-pulse' : 'bg-red-500 animate-pulse'"></div>
-                <div class="min-w-0 leading-tight">
-                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Bluetooth Printer</span>
-                    <span class="text-xs font-extrabold text-white truncate block" x-text="btPrinterConnected ? btPrinterName : 'Offline / Disconnected'"></span>
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-                <template x-if="!btPrinterConnected">
-                    <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-accentBlue/30 active:scale-95 transition-all cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
-                        <i class="fa-solid fa-bluetooth"></i> Connect Printer
-                    </button>
-                </template>
-                <template x-if="btPrinterConnected">
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
-                            Test
-                        </button>
-                        <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="bg-red-950/50 hover:bg-red-900/70 active:scale-95 text-red-300 font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
-                            <i class="fa-solid fa-power-off"></i>
-                        </button>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- Mobile Sticky Bluetooth Printer Header Bar (Visible on mobile screens) -->
         
         <!-- DASHBOARD MODULE -->
         <div x-show="activeTab === 'dashboard'" class="flex flex-col gap-4 animate-fadeIn">
