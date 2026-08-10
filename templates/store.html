@@ -387,13 +387,22 @@
                     <!-- Product Name Centered -->
                     <h4 class="font-extrabold text-xs text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug" x-text="prod.name"></h4>
 
-                    <!-- Price Centered -->
-                    <span class="font-black text-sm text-gray-900 dark:text-white mt-1 font-mono" x-text="'₱' + formatCurrency(prod.retail_price)"></span>
-
                     <!-- Bottle Deposit Indicator -->
                     <template x-if="prod.has_bottle_deposit || parseFloat(prod.bottle_deposit_fee) > 0">
                         <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-1 block">Deposit: ₱<span x-text="formatCurrency(prod.bottle_deposit_fee || 10)"></span></span>
                     </template>
+
+                    <!-- Retail & Wholesale Quick Buttons -->
+                    <div class="mt-2.5 w-full flex items-center justify-between gap-1.5 pt-2 border-t border-gray-100 dark:border-glassBorder/40">
+                        <button type="button" @click.stop="addToCart(prod, 'retail')" class="flex-grow py-1.5 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 dark:text-emerald-300 font-extrabold rounded-xl text-[10px] transition-all flex items-center justify-center gap-0.5 cursor-pointer">
+                            + Single (₱<span x-text="formatCurrency(prod.retail_price)"></span>)
+                        </button>
+                        <template x-if="parseFloat(prod.wholesale_price) > 0">
+                            <button type="button" @click.stop="addToCart(prod, 'wholesale')" class="flex-grow py-1.5 px-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 font-extrabold rounded-xl text-[10px] transition-all flex items-center justify-center gap-0.5 cursor-pointer">
+                                + Case (₱<span x-text="formatCurrency(prod.wholesale_price)"></span>)
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </template>
         </div>
@@ -912,6 +921,11 @@
             
             cartTotal() {
                 return this.cartSubtotal();
+            },
+
+            formatCurrency(val) {
+                let num = parseFloat(val) || 0;
+                return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             },
             
             lookupLoyalty() {
