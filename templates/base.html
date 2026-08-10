@@ -223,29 +223,19 @@
         
         <!-- Desktop Navigation (Hidden on Mobile) -->
         <nav class="hidden md:flex items-center gap-6">
-            {% if user.is_authenticated and not user.customer_profile %}
             <a href="{% url 'store_front' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
                 <i class="fa-solid fa-globe text-gray-400"></i> POS Storefront
             </a>
+            
+            {% if user.is_authenticated and user.customer_profile %}
+                <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-user-tag text-gray-400"></i> My Portal
+                </a>
             {% endif %}
             
-            {% if user.is_authenticated %}
-                {% if user.customer_profile %}
-                    <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-user-tag text-gray-400"></i> My Portal
-                    </a>
-                {% elif user.employee %}
-                    {% if user.employee.role == 'Admin' %}
-                        <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2">
-                            <i class="fa-solid fa-gauge-high text-gray-400"></i> Admin Portal
-                        </a>
-                    {% endif %}
-                {% else %}
-                    <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-gauge-high text-gray-400"></i> Admin Portal
-                    </a>
-                {% endif %}
-            {% endif %}
+            <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-gauge-high text-gray-400"></i> Admin Portal
+            </a>
             
             <!-- Theme Selector Dropdown -->
             <div class="relative" x-data="{ open: false }">
@@ -323,29 +313,19 @@
              x-transition:leave-end="opacity-0 -translate-y-4"
              class="md:hidden flex flex-col gap-4 mt-4 pt-4 border-t border-slate-200 dark:border-glassBorder w-full"
              style="display: none;">
-            {% if user.is_authenticated and not user.customer_profile %}
             <a href="{% url 'store_front' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
                 <i class="fa-solid fa-globe text-gray-400 w-5"></i> POS Storefront
             </a>
+            
+            {% if user.is_authenticated and user.customer_profile %}
+                <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                    <i class="fa-solid fa-user-tag text-gray-400 w-5"></i> My Portal
+                </a>
             {% endif %}
             
-            {% if user.is_authenticated %}
-                {% if user.customer_profile %}
-                    <a href="{% url 'customer_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentCyan transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
-                        <i class="fa-solid fa-user-tag text-gray-400 w-5"></i> My Portal
-                    </a>
-                {% elif user.employee %}
-                    {% if user.employee.role == 'Admin' %}
-                        <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
-                            <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i> Admin Portal
-                        </a>
-                    {% endif %}
-                {% else %}
-                    <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
-                        <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i> Admin Portal
-                    </a>
-                {% endif %}
-            {% endif %}
+            <a href="{% url 'admin_portal' %}" class="text-sm font-semibold tracking-wide hover:text-accentBlue transition-colors flex items-center gap-2 py-2 border-b border-slate-200/40 dark:border-glassBorder/40">
+                <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i> Admin Portal
+            </a>
             
             <!-- Mobile Theme Selection -->
             <div class="flex items-center justify-between py-2 border-b border-slate-200/40 dark:border-glassBorder/40">

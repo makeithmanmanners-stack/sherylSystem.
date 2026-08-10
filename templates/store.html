@@ -167,6 +167,9 @@
                         <i class="fa-solid fa-receipt text-emerald-600 dark:text-emerald-400 text-2xl"></i> Details / Receipt
                     </h3>
                     <div class="flex items-center gap-2">
+                        <a href="{% url 'admin_portal' %}" class="text-xs bg-accentBlue hover:bg-blue-700 text-white font-extrabold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-accentBlue/20">
+                            <i class="fa-solid fa-gauge-high"></i> Admin Portal
+                        </a>
                         <span class="text-xs bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-extrabold px-3 py-1 rounded-full" x-text="cart.length + ' item(s)'"></span>
                         <button type="button" @click="clearCart()" x-show="cart.length > 0" class="text-xs text-red-600 hover:text-red-700 dark:text-red-400 font-bold px-2.5 py-1 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 rounded-lg border border-red-200 dark:border-red-500/30 transition-colors">
                             <i class="fa-solid fa-trash-can mr-1"></i> Clear
@@ -967,17 +970,21 @@
                 this.showConfirmOrderModal = true;
             },
 
-            handlePrintReceiptClick() {
+            async handlePrintReceiptClick() {
                 if (this.cart.length === 0) {
+                    if (this.receiptData && this.receiptData.invoice_no) {
+                        this.showReceipt = true;
+                        this.printBluetoothReceipt(this.receiptData);
+                        return;
+                    }
                     alert("🛒 Your shopping cart is empty! Please tap any product on the catalog grid to add items before printing receipt.");
                     return;
                 }
-                this.autoConnectBluetoothPrinter();
-                this.openOrderConfirmModal();
+                await this.executeSubmitOrder();
             },
 
             async submitOrder() {
-                this.openOrderConfirmModal();
+                await this.executeSubmitOrder();
             },
             
             async executeSubmitOrder() {
@@ -1012,7 +1019,7 @@
                     tax: tax,
                     total: total,
                     method: this.checkoutPaymentMethod,
-                    status: "Draft", // Draft order allows cashier to scan & modify or complete at POS
+                    status: "Draft",
                     items: itemsPayload
                 };
                 
@@ -1048,18 +1055,19 @@
                         };
                         
                         this.showReceipt = true;
+                        let activeReceipt = JSON.parse(JSON.stringify(this.receiptData));
                         this.cart = []; // clear cart
                         this.checkoutCustomerId = '';
                         this.checkoutRoute = '';
                         this.checkoutCashReceived = 0;
                         this.loadState(); // reload catalog stock levels
 
-                        // Automatic Bluetooth Printer Connection & Auto-Print Receipt
-                        this.autoConnectBluetoothPrinter().then(connected => {
-                            if (connected && this.btPrinterConnected) {
-                                this.printBluetoothReceipt(this.receiptData);
-                            }
-                        });
+                        // Trigger Bluetooth Receipt Print immediately
+                        try {
+                            await this.printBluetoothReceipt(activeReceipt);
+                        } catch(eBt) {
+                            console.error("Auto print error: ", eBt);
+                        }
                     } else {
                         alert("Error submitting order: " + resData.error);
                     }
