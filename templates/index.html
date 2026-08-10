@@ -1865,12 +1865,15 @@
             newCostPrice: 0,
             newWholesalePrice: 0,
             newRetailPrice: 0,
+            newStockQty: 10,
             newMinStock: 5,
             newMaxStock: 100,
             newBarcode: '',
             newBrandId: '',
             newCategoryId: '',
             newSupplierId: '',
+            newHasBottleDeposit: false,
+            newBottleDepositFee: 0,
             newImageFile: null,
             newImageUrl: '',
             imagePreview: '',
@@ -2355,6 +2358,11 @@
                     console.error("Delete sale error:", e);
                     alert("Network error deleting sale.");
                 }
+            },
+            
+            formatCurrency(val) {
+                let num = parseFloat(val) || 0;
+                return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             },
             
             criticalProductsCount() {
