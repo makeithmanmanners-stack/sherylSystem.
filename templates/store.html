@@ -571,7 +571,7 @@
          @click.self="showReceipt = false" 
          @keydown.window.escape="showReceipt = false" 
          class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
-        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto cursor-default shadow-2xl">
+        <div id="receipt-print-area" @click.stop class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto cursor-default shadow-2xl">
             <button type="button" @click="showReceipt = false" class="absolute top-3 right-3 w-10 h-10 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-xl border border-glassBorder no-print" title="Close Receipt (Esc)">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
@@ -703,19 +703,19 @@
                 
                 <div class="flex gap-2">
                     <template x-if="!btPrinterConnected">
-                        <button type="button" @click="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer select-none" style="touch-action: manipulation;">
+                        <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer select-none min-h-[48px]" style="touch-action: manipulation;">
                             <i class="fa-solid fa-bluetooth text-base"></i> Connect Bluetooth Thermal Printer
                         </button>
                     </template>
                     <template x-if="btPrinterConnected">
                         <div class="flex gap-2 w-full">
-                            <button type="button" @click="printBluetoothReceipt()" class="flex-grow bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer select-none" style="touch-action: manipulation;">
-                                <i class="fa-solid fa-print"></i> Thermal Print Receipt
+                            <button type="button" @click.stop.prevent="printBluetoothReceipt()" class="flex-grow bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 active:scale-95 text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
+                                <i class="fa-solid fa-print text-sm"></i> Thermal Print Receipt
                             </button>
-                            <button type="button" @click="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 text-accentCyan font-bold px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none" style="touch-action: manipulation;">
+                            <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold px-3 py-3 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
                                 Test
                             </button>
-                            <button type="button" @click="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 text-red-300 font-bold px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none" style="touch-action: manipulation;">
+                            <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 active:scale-95 text-red-300 font-bold px-3 py-3 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
                                 Off
                             </button>
                         </div>
@@ -724,10 +724,10 @@
             </div>
 
             <div class="mt-5 flex flex-col gap-2.5 no-print">
-                <button type="button" @click="printReceipt()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                <button type="button" @click.stop.prevent="printReceipt()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md min-h-[44px]">
                     <i class="fa-solid fa-file-pdf"></i> Browser Print / Save PDF
                 </button>
-                <button type="button" @click="showReceipt = false" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-sm py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30">
+                <button type="button" @click.stop.prevent="showReceipt = false" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-sm py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30 min-h-[48px]">
                     <i class="fa-solid fa-circle-check text-base"></i> Close Receipt / Done
                 </button>
             </div>
@@ -1201,7 +1201,7 @@
                     } else {
                         alert("📱 TO OPEN THE BLUETOOTH PAIRING DIALOG ON ANDROID:\n\n1. Please use Google Chrome Browser.\n2. Turn ON Bluetooth & Location (GPS) in phone settings.\n3. Make sure Bluetooth site permissions are ALLOWED in Chrome.");
                     }
-                    return;
+                    return false;
                 }
                 try {
                     const optionalServices = [
@@ -1231,6 +1231,8 @@
                         });
                     }
                     
+                    if (!device) return false;
+
                     console.log(`Connecting to Bluetooth thermal printer: ${device.name || "Unnamed"}`);
                     const server = await device.gatt.connect();
                     
@@ -1290,11 +1292,17 @@
                         });
 
                         alert(`✅ Bluetooth Printer Paired & Connected: ${this.btPrinterName}`);
+                        return true;
                     } else {
                         alert("Bluetooth Printer paired successfully!");
+                        return true;
                     }
                 } catch(err) {
                     console.log("Bluetooth printer pairing cancelled or error: ", err);
+                    if (err && err.name !== 'NotFoundError' && err.name !== 'AbortError') {
+                        alert("📱 Bluetooth Pairing Notice:\n\nMake sure Bluetooth & Location are turned ON in phone settings.");
+                    }
+                    return false;
                 }
             },
 
@@ -1343,10 +1351,8 @@
 
             async printBluetoothTestPage() {
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    let reconnected = await this.autoConnectBluetoothPrinter();
-                    if (!reconnected) {
-                        await this.connectBluetoothPrinter();
-                    }
+                    let connected = await this.connectBluetoothPrinter();
+                    if (!connected) return;
                 }
                 try {
                     const encoder = new TextEncoder();
@@ -1408,9 +1414,12 @@
             async printBluetoothReceipt(receipt) {
                 if (!receipt) receipt = this.receiptData;
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    let reconnected = await this.autoConnectBluetoothPrinter();
-                    if (!reconnected && navigator.bluetooth) {
-                        try { await this.connectBluetoothPrinter(); } catch(e) {}
+                    if (navigator.bluetooth) {
+                        let connected = await this.connectBluetoothPrinter();
+                        if (!connected && !this.btPrinterConnected) {
+                            this.printReceipt();
+                            return;
+                        }
                     }
                 }
                 

@@ -59,16 +59,16 @@
             <div class="text-[10px] text-gray-400 truncate font-mono" x-text="btPrinterConnected ? btPrinterName : 'No printer paired'"></div>
             <div class="flex gap-1.5 mt-0.5">
                 <template x-if="!btPrinterConnected">
-                    <button @click="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 text-white font-bold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all shadow-sm">
+                    <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="w-full bg-gradient-to-r from-accentBlue to-accentCyan hover:brightness-110 active:scale-95 text-white font-bold py-2 px-3 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
                         <i class="fa-solid fa-bluetooth"></i> Connect Bluetooth
                     </button>
                 </template>
                 <template x-if="btPrinterConnected">
                     <div class="grid grid-cols-2 gap-1.5 w-full">
-                        <button @click="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 text-accentCyan font-bold py-1 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors">
+                        <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold py-2 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
                             <i class="fa-solid fa-vial"></i> Test Print
                         </button>
-                        <button @click="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 text-red-300 font-bold py-1 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors">
+                        <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="bg-red-950/40 hover:bg-red-900/60 active:scale-95 text-red-300 font-bold py-2 px-2 rounded-xl text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer select-none min-h-[40px]" style="touch-action: manipulation;">
                             <i class="fa-solid fa-power-off"></i> Off
                         </button>
                     </div>
@@ -91,16 +91,16 @@
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
                 <template x-if="!btPrinterConnected">
-                    <button type="button" @click="connectBluetoothPrinter()" class="bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-accentBlue/30 active:scale-95 transition-all cursor-pointer select-none" style="touch-action: manipulation;">
+                    <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="bg-gradient-to-r from-accentBlue to-accentCyan text-white font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-accentBlue/30 active:scale-95 transition-all cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
                         <i class="fa-solid fa-bluetooth"></i> Connect Printer
                     </button>
                 </template>
                 <template x-if="btPrinterConnected">
                     <div class="flex items-center gap-1.5">
-                        <button type="button" @click="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 text-accentCyan font-bold py-1.5 px-3 rounded-xl text-xs transition-colors cursor-pointer select-none" style="touch-action: manipulation;">
+                        <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
                             Test
                         </button>
-                        <button type="button" @click="disconnectBluetoothPrinter()" class="bg-red-950/50 text-red-300 font-bold py-1.5 px-2.5 rounded-xl text-xs transition-colors cursor-pointer select-none" style="touch-action: manipulation;">
+                        <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="bg-red-950/50 hover:bg-red-900/70 active:scale-95 text-red-300 font-bold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer select-none min-h-[44px]" style="touch-action: manipulation;">
                             <i class="fa-solid fa-power-off"></i>
                         </button>
                     </div>
@@ -370,16 +370,16 @@
                             </div>
                             <div class="flex gap-1 shrink-0">
                                 <template x-if="!btPrinterConnected">
-                                    <button @click="connectBluetoothPrinter()" class="px-2 py-1 bg-accentBlue hover:bg-accentBlue/80 text-white font-bold text-[9px] rounded-lg transition-colors flex items-center gap-1">
+                                    <button type="button" @click.stop.prevent="connectBluetoothPrinter()" class="px-3 py-1.5 bg-accentBlue hover:bg-accentBlue/80 active:scale-95 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 cursor-pointer select-none min-h-[36px]" style="touch-action: manipulation;">
                                         <i class="fa-solid fa-bluetooth text-[9px]"></i> Connect
                                     </button>
                                 </template>
                                 <template x-if="btPrinterConnected">
                                     <div class="flex gap-1">
-                                        <button @click="printBluetoothTestPage()" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 text-accentCyan font-bold text-[9px] rounded transition-colors">
+                                        <button type="button" @click.stop.prevent="printBluetoothTestPage()" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 active:scale-95 text-accentCyan font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none min-h-[36px]" style="touch-action: manipulation;">
                                             Test
                                         </button>
-                                        <button @click="disconnectBluetoothPrinter()" class="px-1.5 py-0.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 font-bold text-[9px] rounded transition-colors">
+                                        <button type="button" @click.stop.prevent="disconnectBluetoothPrinter()" class="px-2.5 py-1.5 bg-red-950/40 hover:bg-red-900/60 active:scale-95 text-red-300 font-bold text-[10px] rounded-lg transition-colors cursor-pointer select-none min-h-[36px]" style="touch-action: manipulation;">
                                             Off
                                         </button>
                                     </div>
@@ -3000,7 +3000,7 @@
                     } else {
                         alert("📱 TO OPEN THE BLUETOOTH PAIRING DIALOG ON ANDROID:\n\n1. Please use Google Chrome Browser.\n2. Turn ON Bluetooth & Location (GPS) in phone settings.\n3. Make sure Bluetooth site permissions are ALLOWED in Chrome.");
                     }
-                    return;
+                    return false;
                 }
                 try {
                     const optionalServices = [
@@ -3030,6 +3030,8 @@
                         });
                     }
                     
+                    if (!device) return false;
+
                     console.log(`Connecting to Bluetooth device: ${device.name || "Unnamed"}`);
                     const server = await device.gatt.connect();
                     
@@ -3090,11 +3092,17 @@
                         });
 
                         alert(`✅ Bluetooth Printer Paired & Connected: ${this.btPrinterName}`);
+                        return true;
                     } else {
                         alert("Bluetooth Printer paired successfully!");
+                        return true;
                     }
                 } catch(err) {
                     console.log("Bluetooth printer pairing cancelled or error: ", err);
+                    if (err && err.name !== 'NotFoundError' && err.name !== 'AbortError') {
+                        alert("📱 Bluetooth Pairing Notice:\n\nMake sure Bluetooth & Location are turned ON in phone settings.");
+                    }
+                    return false;
                 }
             },
             
@@ -3143,10 +3151,8 @@
             
             async printBluetoothTestPage() {
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    let reconnected = await this.autoConnectBluetoothPrinter();
-                    if (!reconnected) {
-                        await this.connectBluetoothPrinter();
-                    }
+                    let connected = await this.connectBluetoothPrinter();
+                    if (!connected) return;
                 }
                 try {
                     const encoder = new TextEncoder();
@@ -3208,11 +3214,12 @@
             async printBluetoothReceipt(receipt) {
                 if (!receipt) receipt = this.receiptData || this.lastPOSReceipt;
                 
-                // Auto-reconnect try if missing
                 if (!this.btPrinterConnected || !this.btCharacteristic) {
-                    let reconnected = await this.autoConnectBluetoothPrinter();
-                    if (!reconnected && navigator.bluetooth) {
-                        try { await this.connectBluetoothPrinter(); } catch(e) {}
+                    if (navigator.bluetooth) {
+                        let connected = await this.connectBluetoothPrinter();
+                        if (!connected && !this.btPrinterConnected) {
+                            return;
+                        }
                     }
                 }
                 
