@@ -5,24 +5,57 @@
     
     <!-- Sidebar Navigation -->
     <aside class="glass-card p-4 md:w-64 flex flex-col justify-between gap-6 shrink-0 shadow-lg">
-        <div class="flex flex-col gap-2">
-            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">Admin Navigation</div>
+        <div class="flex flex-col gap-1.5">
+            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">Superadmin Navigation</div>
             
-            <template x-for="tab in tabs" :key="tab.id">
-                <button @click="switchTab(tab.id)" :class="activeTab === tab.id ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-left">
-                    <i :class="tab.icon" class="w-5 text-center text-sm"></i>
-                    <span x-text="tab.name"></span>
-                </button>
-            </template>
-            
+            <button type="button" @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
+                <span>Dashboard Analytics</span>
+            </button>
+
+            <button type="button" @click="switchTab('pos')" :class="activeTab === 'pos' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-calculator w-5 text-center text-sm"></i>
+                <span>POS Cashier Register</span>
+            </button>
+
+            <button type="button" @click="switchTab('sales')" :class="activeTab === 'sales' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-receipt w-5 text-center text-sm"></i>
+                <span>Orders & Drafts</span>
+            </button>
+
+            <button type="button" @click="switchTab('inventory')" :class="activeTab === 'inventory' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-boxes-stacked w-5 text-center text-sm"></i>
+                <span>Inventory Master</span>
+            </button>
+
+            <button type="button" @click="switchTab('ledger')" :class="activeTab === 'ledger' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-book-bookmark w-5 text-center text-sm"></i>
+                <span>Sales Ledger & Credits</span>
+            </button>
+
+            <button type="button" @click="switchTab('subscriptions')" :class="activeTab === 'subscriptions' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-file-signature w-5 text-center text-sm"></i>
+                <span>Subscriptions & Billing</span>
+            </button>
+
+            <button type="button" @click="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-brain w-5 text-center text-sm"></i>
+                <span>AI Sales Forecasts</span>
+            </button>
+
+            <button type="button" @click="switchTab('settings')" :class="activeTab === 'settings' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
+                <i class="fa-solid fa-sliders w-5 text-center text-sm"></i>
+                <span>System Settings</span>
+            </button>
+
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
-            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
+            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
                 <i class="fa-solid fa-globe w-5 text-center text-sm text-accentCyan"></i>
                 <span class="font-medium">POS Storefront</span>
             </a>
             
-            <a href="/admin/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-purple-200 hover:text-white hover:bg-purple-800/50 transition-all text-left shadow-sm">
+            <a href="/admin/" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-purple-200 hover:text-white hover:bg-purple-800/50 transition-all text-left shadow-sm">
                 <i class="fa-solid fa-shield-halved w-5 text-center text-sm text-purple-400"></i>
                 <span class="font-extrabold">Django Admin Panel</span>
             </a>
