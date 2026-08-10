@@ -1921,7 +1921,7 @@
                     this.storeName = data.store_name || 'Sheyde Sari-Sari Store & ERP';
                     if (!this.settingsStoreName) this.settingsStoreName = this.storeName;
 
-                    // Filter tabs according to user_plan
+                    // Always grant Superadmin / Admin full access to all ERP modules
                     let allTabs = [
                         { id: 'dashboard', name: 'Dashboard Analytics', icon: 'fa-solid fa-chart-pie' },
                         { id: 'pos', name: 'POS Cashier Register', icon: 'fa-solid fa-calculator' },
@@ -1932,26 +1932,7 @@
                         { id: 'reports', name: 'AI Forecasts', icon: 'fa-solid fa-brain' },
                         { id: 'settings', name: 'System Settings', icon: 'fa-solid fa-sliders' },
                     ];
-
-                    if (this.userPlan === 'Starter') {
-                        this.tabs = allTabs.filter(t => ['sales', 'inventory', 'ledger', 'settings'].includes(t.id));
-                        if (!this.tabs.some(t => t.id === this.activeTab)) {
-                            this.activeTab = 'sales';
-                        }
-                    } else if (this.userPlan === 'Standard') {
-                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'ledger', 'settings'].includes(t.id));
-                        if (!this.tabs.some(t => t.id === this.activeTab)) {
-                            this.activeTab = 'dashboard';
-                        }
-                    } else if (this.userPlan === 'VIP') {
-                        this.tabs = allTabs.filter(t => ['dashboard', 'sales', 'inventory', 'ledger', 'reports', 'settings'].includes(t.id));
-                        if (!this.tabs.some(t => t.id === this.activeTab)) {
-                            this.activeTab = 'dashboard';
-                        }
-                    } else {
-                        // Admin / Superuser gets full access to all modules including Subscriptions & Payments Approval
-                        this.tabs = allTabs;
-                    }
+                    this.tabs = allTabs;
 
                     this.categories = data.categories || [];
                     this.brands = data.brands || [];
