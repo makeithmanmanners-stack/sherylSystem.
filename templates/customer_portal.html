@@ -599,10 +599,13 @@
     </div>
 
     <!-- Checkout Confirmation Modal (Receipt / QR Pay) -->
-    <div x-show="showReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
-        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto">
-            <button @click="showReceipt = false" class="absolute top-4 right-4 text-gray-550 hover:text-white no-print">
-                <i class="fa-solid fa-circle-xmark text-xl"></i>
+    <div x-show="showReceipt" 
+         @click.self="showReceipt = false" 
+         @keydown.window.escape="showReceipt = false" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
+        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto cursor-default shadow-2xl">
+            <button type="button" @click="showReceipt = false" class="absolute top-3 right-3 w-10 h-10 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-xl border border-glassBorder no-print" title="Close Receipt (Esc)">
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="text-center pb-4 border-b border-glassBorder">
@@ -692,19 +695,19 @@
                 </div>
             </div>
             
-            <div class="mt-6 flex items-center gap-2">
-                <button @click="showReceipt = false" class="w-full bg-accentBlue hover:bg-accentBlue/80 text-white font-bold text-xs py-2.5 rounded-lg transition-all flex items-center justify-center">
-                    Done
+            <div class="mt-6 flex flex-col gap-2.5 no-print">
+                <button type="button" @click="showReceipt = false" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-sm py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30">
+                    <i class="fa-solid fa-circle-check text-base"></i> Close Receipt / Done
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Camera Barcode Scanner Modal -->
-    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
-        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 text-center">
-            <button @click="stopCameraScanner()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
-                <i class="fa-solid fa-circle-xmark text-xl"></i>
+    <div x-show="showScannerModal" @click.self="stopCameraScanner()" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
+        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 text-center cursor-default shadow-2xl">
+            <button type="button" @click="stopCameraScanner()" class="absolute top-3 right-3 w-9 h-9 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-md border border-glassBorder" title="Close Scanner">
+                <i class="fa-solid fa-xmark text-base"></i>
             </button>
             <h3 class="font-extrabold text-sm text-white mb-2">Camera Barcode Scanner</h3>
             <div id="customer-scanner" class="w-full aspect-video rounded-lg overflow-hidden bg-black border border-glassBorder mb-4"></div>
@@ -713,10 +716,10 @@
     </div>
 
     <!-- GCash Payment Modal -->
-    <div x-show="showPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak>
-        <div class="glass-card max-w-sm w-full p-6 relative border border-accentBlue/30">
-            <button @click="showPaymentModal = false" class="absolute top-3 right-3 text-gray-500 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <div x-show="showPaymentModal" @click.self="showPaymentModal = false" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
+        <div class="glass-card max-w-sm w-full p-6 relative border border-accentBlue/30 cursor-default shadow-2xl">
+            <button type="button" @click="showPaymentModal = false" class="absolute top-3 right-3 w-9 h-9 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-md border border-glassBorder" title="Close Modal">
+                <i class="fa-solid fa-xmark text-base"></i>
             </button>
             <h3 class="font-extrabold text-sm text-slate-800 dark:text-white mb-2 pb-2 border-b border-glassBorder flex items-center gap-1.5">
                 <i class="fa-solid fa-credit-card text-accentCyan"></i> Submit GCash Payment

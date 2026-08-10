@@ -454,7 +454,7 @@
     <div x-show="showConfirmOrderModal" 
          @click.self="showConfirmOrderModal = false" 
          @keydown.window.escape="showConfirmOrderModal = false" 
-         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition>
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
         <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/40 animate-fadeIn shadow-2xl cursor-default">
             <button type="button" @click="showConfirmOrderModal = false" class="absolute top-3 right-3 w-9 h-9 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-md border border-glassBorder" title="Close Modal (Esc)">
                 <i class="fa-solid fa-xmark text-base"></i>
@@ -558,7 +558,7 @@
     <div x-show="showReceipt" 
          @click.self="showReceipt = false" 
          @keydown.window.escape="showReceipt = false" 
-         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition>
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition x-cloak>
         <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto cursor-default shadow-2xl">
             <button type="button" @click="showReceipt = false" class="absolute top-3 right-3 w-10 h-10 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-xl border border-glassBorder no-print" title="Close Receipt (Esc)">
                 <i class="fa-solid fa-xmark text-lg"></i>

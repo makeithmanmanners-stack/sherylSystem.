@@ -305,15 +305,7 @@ def index(request):
         return HttpResponse("Access Denied: Active approved subscription required to access Admin Panel.", status=403)
     return render(request, 'index.html')
 
-@login_required(login_url='login')
 def store(request):
-    user = request.user
-    emp = getattr(user, 'employee', None)
-    is_admin = user.is_superuser or user.is_staff or (emp and emp.role == 'Admin') or (user.username and user.username.lower() == 'khertadmin')
-    if not is_admin:
-        sub = Subscription.objects.filter(Q(user=user) | Q(username=user.username), status='Approved').first()
-        if not sub:
-            return HttpResponse("Access Denied: Active approved subscription required to access Storefront.", status=403)
     return render(request, 'store.html')
 
 def login_view(request):
