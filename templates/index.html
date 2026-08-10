@@ -8,45 +8,45 @@
         <div class="flex flex-col gap-1.5">
             <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2 select-none">Superadmin Navigation</div>
             
-            <button type="button" @click.prevent="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=dashboard" @click.prevent="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-chart-pie w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">Dashboard Analytics</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('pos')" :class="activeTab === 'pos' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=pos" @click.prevent="switchTab('pos')" :class="activeTab === 'pos' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-calculator w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">POS Cashier Register</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('sales')" :class="activeTab === 'sales' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=sales" @click.prevent="switchTab('sales')" :class="activeTab === 'sales' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-receipt w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">Orders & Drafts</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('inventory')" :class="activeTab === 'inventory' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=inventory" @click.prevent="switchTab('inventory')" :class="activeTab === 'inventory' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-boxes-stacked w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">Inventory Master</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('ledger')" :class="activeTab === 'ledger' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=ledger" @click.prevent="switchTab('ledger')" :class="activeTab === 'ledger' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-book-bookmark w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">Sales Ledger & Credits</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('subscriptions')" :class="activeTab === 'subscriptions' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=subscriptions" @click.prevent="switchTab('subscriptions')" :class="activeTab === 'subscriptions' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-file-signature w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">Subscriptions & Billing</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=reports" @click.prevent="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-brain w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">AI Sales Forecasts</span>
-            </button>
+            </a>
 
-            <button type="button" @click.prevent="switchTab('settings')" :class="activeTab === 'settings' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+            <a href="?tab=settings" @click.prevent="switchTab('settings')" :class="activeTab === 'settings' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
                 <i class="fa-solid fa-sliders w-5 text-center text-sm shrink-0"></i>
                 <span class="truncate">System Settings</span>
-            </button>
+            </a>
 
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
@@ -1933,6 +1933,13 @@
             routeChart: null,
             
             initAdmin() {
+                try {
+                    let urlParams = new URLSearchParams(window.location.search);
+                    let tabParam = urlParams.get('tab');
+                    if (tabParam && ['dashboard', 'pos', 'sales', 'inventory', 'ledger', 'subscriptions', 'reports', 'settings'].includes(tabParam)) {
+                        this.activeTab = tabParam;
+                    }
+                } catch(e) {}
                 this.loadAdminState();
                 this.autoConnectBluetoothPrinter();
                 window.addEventListener('focus', () => {
@@ -2361,6 +2368,11 @@
             switchTab(tabId) {
                 if (tabId === 'cashier') tabId = 'pos';
                 this.activeTab = tabId;
+                try {
+                    let url = new URL(window.location);
+                    url.searchParams.set('tab', tabId);
+                    window.history.pushState({}, '', url);
+                } catch(e) {}
                 if (tabId === 'dashboard') {
                     setTimeout(() => this.initChart(), 50);
                 }
