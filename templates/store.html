@@ -451,10 +451,13 @@
     </div>
 
     <!-- Order Confirmation Modal (Mobile & Desktop Friendly) -->
-    <div x-show="showConfirmOrderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4" x-transition>
-        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/40 animate-fadeIn shadow-2xl">
-            <button @click="showConfirmOrderModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <div x-show="showConfirmOrderModal" 
+         @click.self="showConfirmOrderModal = false" 
+         @keydown.window.escape="showConfirmOrderModal = false" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition>
+        <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/40 animate-fadeIn shadow-2xl cursor-default">
+            <button type="button" @click="showConfirmOrderModal = false" class="absolute top-3 right-3 w-9 h-9 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-md border border-glassBorder" title="Close Modal (Esc)">
+                <i class="fa-solid fa-xmark text-base"></i>
             </button>
             
             <div class="flex items-center gap-3 mb-4 border-b border-glassBorder pb-3">
@@ -552,10 +555,13 @@
     </div>
     
     <!-- Checkout Confirmation Modal -->
-    <div x-show="showReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
-        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto">
-            <button @click="showReceipt = false" class="absolute top-4 right-4 text-gray-550 hover:text-white no-print">
-                <i class="fa-solid fa-circle-xmark text-xl"></i>
+    <div x-show="showReceipt" 
+         @click.self="showReceipt = false" 
+         @keydown.window.escape="showReceipt = false" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/85 backdrop-blur-md p-4 cursor-pointer" x-transition>
+        <div id="receipt-print-area" class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30 max-h-[90vh] overflow-y-auto cursor-default shadow-2xl">
+            <button type="button" @click="showReceipt = false" class="absolute top-3 right-3 w-10 h-10 bg-gray-800 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all z-50 cursor-pointer shadow-xl border border-glassBorder no-print" title="Close Receipt (Esc)">
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <div class="text-center pb-4 border-b border-glassBorder">
@@ -705,12 +711,12 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex items-center gap-2 no-print">
-                <button @click="printReceipt()" class="flex-grow bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5">
+            <div class="mt-5 flex flex-col gap-2.5 no-print">
+                <button type="button" @click="printReceipt()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md">
                     <i class="fa-solid fa-file-pdf"></i> Browser Print / Save PDF
                 </button>
-                <button @click="showReceipt = false" class="flex-grow bg-accentBlue hover:bg-accentBlue/80 text-white font-bold text-xs py-2.5 rounded-lg transition-all flex items-center justify-center">
-                    Done
+                <button type="button" @click="showReceipt = false" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-black text-sm py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/30">
+                    <i class="fa-solid fa-circle-check text-base"></i> Close Receipt / Done
                 </button>
             </div>
         </div>
