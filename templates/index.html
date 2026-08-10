@@ -1150,7 +1150,7 @@
     </div>
 
     <!-- MODAL: Add Product -->
-    <div x-show="showAddProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showAddProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-2xl w-full p-6 relative border border-accentGreen/30 max-h-[90vh] overflow-y-auto animate-fadeIn">
             <button @click="showAddProductModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -1340,7 +1340,7 @@
     </div>
 
     <!-- MODAL: Edit Product -->
-    <div x-show="showEditProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showEditProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-2xl w-full p-6 relative border border-accentBlue/30 max-h-[90vh] overflow-y-auto animate-fadeIn">
             <button @click="showEditProductModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -1466,7 +1466,7 @@
     </div>
 
     <!-- MODAL: Create Purchase Order (Restock) -->
-    <div x-show="showCreatePOModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showCreatePOModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-lg w-full p-6 relative border border-accentBlue/30 animate-fadeIn">
             <button @click="showCreatePOModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -1525,7 +1525,7 @@
     </div>
 
     <!-- MODAL: Record Expense -->
-    <div x-show="showCreateExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showCreateExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-md w-full p-6 relative border border-accentGreen/30 animate-fadeIn">
             <button @click="showCreateExpenseModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -1567,7 +1567,7 @@
     </div>
 
     <!-- MODAL 1: Create Dispatch Trip -->
-    <div x-show="showCreateTripModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showCreateTripModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-xl w-full p-6 relative border border-accentBlue/30">
             <button @click="showCreateTripModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
@@ -1630,7 +1630,7 @@
     </div>
 
     <!-- MODAL 2: Reconcile Dispatch Trip (Auto-Calculator) -->
-    <div x-show="showReconcileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showReconcileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-2xl w-full p-6 relative border border-accentGreen/30">
             <button @click="showReconcileModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
@@ -1713,7 +1713,7 @@
     </div>
 
     <!-- MODAL 3: Pay Credit Accounts -->
-    <div x-show="showCreditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showCreditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-md w-full p-6 relative border border-accentBlue/30">
             <button @click="showCreditModal = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
@@ -1759,7 +1759,7 @@
     </div>
 
     <!-- MODAL 4: Camera Barcode Scanner -->
-    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition>
+    <div x-show="showScannerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4" x-transition x-cloak style="display: none;">
         <div class="glass-card max-w-md w-full p-6 relative border border-accentCyan/30">
             <button @click="stopCameraScanner()" class="absolute top-4 right-4 text-gray-550 hover:text-white">
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
