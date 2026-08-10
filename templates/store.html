@@ -1205,13 +1205,24 @@
                 }
                 try {
                     const optionalServices = [
+                        "0000ffe0-0000-1000-8000-00805f9b34fb",
+                        "0000ffe1-0000-1000-8000-00805f9b34fb",
                         "000018f0-0000-1000-8000-00805f9b34fb",
                         "0000e7e1-0000-1000-8000-00805f9b34fb",
                         "00004953-5343-fe5d-4b5c-8735163f435a",
+                        "49535343-fe5d-4b5c-8735-163f435a662c",
+                        "e7e16012-a617-11e3-a5e2-0800200c9a66",
                         "00001101-0000-1000-8000-00805f9b34fb",
                         "0000ff00-0000-1000-8000-00805f9b34fb",
-                        "0000ffe0-0000-1000-8000-00805f9b34fb",
-                        "0000ff02-0000-1000-8000-00805f9b34fb"
+                        "0000ff02-0000-1000-8000-00805f9b34fb",
+                        "0000ae30-0000-1000-8000-00805f9b34fb",
+                        "0000af30-0000-1000-8000-00805f9b34fb",
+                        "00001800-0000-1000-8000-00805f9b34fb",
+                        "00001801-0000-1000-8000-00805f9b34fb",
+                        "0000180a-0000-1000-8000-00805f9b34fb",
+                        "0000fef5-0000-1000-8000-00805f9b34fb",
+                        "0000fd00-0000-1000-8000-00805f9b34fb",
+                        "0000ffe5-0000-1000-8000-00805f9b34fb"
                     ];
                     
                     let device = null;
@@ -1221,14 +1232,20 @@
                             optionalServices: optionalServices
                         });
                     } catch(eAll) {
-                        device = await navigator.bluetooth.requestDevice({
-                            filters: [
-                                { services: ["000018f0-0000-1000-8000-00805f9b34fb"] },
-                                { services: ["0000ffe0-0000-1000-8000-00805f9b34fb"] },
-                                { services: ["00001101-0000-1000-8000-00805f9b34fb"] }
-                            ],
-                            optionalServices: optionalServices
-                        });
+                        try {
+                            device = await navigator.bluetooth.requestDevice({
+                                filters: [
+                                    { services: ["0000ffe0-0000-1000-8000-00805f9b34fb"] },
+                                    { services: ["000018f0-0000-1000-8000-00805f9b34fb"] },
+                                    { services: ["0000e7e1-0000-1000-8000-00805f9b34fb"] },
+                                    { services: ["00001101-0000-1000-8000-00805f9b34fb"] }
+                                ],
+                                optionalServices: optionalServices
+                            });
+                        } catch(eFilter) {
+                            console.log("Bluetooth device request cancelled:", eFilter);
+                            return false;
+                        }
                     }
                     
                     if (!device) return false;
@@ -1255,13 +1272,15 @@
                         try {
                             const services = await server.getPrimaryServices();
                             for (const s of services) {
-                                const characteristics = await s.getCharacteristics();
-                                const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
-                                if (c) {
-                                    service = s;
-                                    characteristic = c;
-                                    break;
-                                }
+                                try {
+                                    const characteristics = await s.getCharacteristics();
+                                    const c = characteristics.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+                                    if (c) {
+                                        service = s;
+                                        characteristic = c;
+                                        break;
+                                    }
+                                } catch(e) {}
                             }
                         } catch(e) {}
                     }
@@ -1294,8 +1313,8 @@
                         alert(`✅ Bluetooth Printer Paired & Connected: ${this.btPrinterName}`);
                         return true;
                     } else {
-                        alert("Bluetooth Printer paired successfully!");
-                        return true;
+                        alert(`⚠️ Printer paired (${device.name || 'Bluetooth Printer'}), but no writable ESC/POS channel was found. Please ensure device is in ESC/POS thermal print mode.`);
+                        return false;
                     }
                 } catch(err) {
                     console.log("Bluetooth printer pairing cancelled or error: ", err);
