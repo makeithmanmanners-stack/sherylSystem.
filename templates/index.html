@@ -4,60 +4,60 @@
 <div x-data="adminApp()" x-init="initAdmin()" class="flex-grow flex flex-col md:flex-row gap-4 h-full" x-cloak>
     
     <!-- Sidebar Navigation -->
-    <aside class="glass-card p-4 md:w-64 flex flex-col justify-between gap-6 shrink-0 shadow-lg">
+    <aside class="glass-card p-4 md:w-64 flex flex-col justify-between gap-6 shrink-0 shadow-lg relative z-30">
         <div class="flex flex-col gap-1.5">
-            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2">Superadmin Navigation</div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-2 select-none">Superadmin Navigation</div>
             
-            <button type="button" @click="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
-                <span>Dashboard Analytics</span>
+            <button type="button" @click.prevent="switchTab('dashboard')" :class="activeTab === 'dashboard' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">Dashboard Analytics</span>
             </button>
 
-            <button type="button" @click="switchTab('pos')" :class="activeTab === 'pos' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-calculator w-5 text-center text-sm"></i>
-                <span>POS Cashier Register</span>
+            <button type="button" @click.prevent="switchTab('pos')" :class="activeTab === 'pos' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-calculator w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">POS Cashier Register</span>
             </button>
 
-            <button type="button" @click="switchTab('sales')" :class="activeTab === 'sales' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-receipt w-5 text-center text-sm"></i>
-                <span>Orders & Drafts</span>
+            <button type="button" @click.prevent="switchTab('sales')" :class="activeTab === 'sales' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-receipt w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">Orders & Drafts</span>
             </button>
 
-            <button type="button" @click="switchTab('inventory')" :class="activeTab === 'inventory' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-boxes-stacked w-5 text-center text-sm"></i>
-                <span>Inventory Master</span>
+            <button type="button" @click.prevent="switchTab('inventory')" :class="activeTab === 'inventory' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-boxes-stacked w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">Inventory Master</span>
             </button>
 
-            <button type="button" @click="switchTab('ledger')" :class="activeTab === 'ledger' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-book-bookmark w-5 text-center text-sm"></i>
-                <span>Sales Ledger & Credits</span>
+            <button type="button" @click.prevent="switchTab('ledger')" :class="activeTab === 'ledger' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-book-bookmark w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">Sales Ledger & Credits</span>
             </button>
 
-            <button type="button" @click="switchTab('subscriptions')" :class="activeTab === 'subscriptions' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-file-signature w-5 text-center text-sm"></i>
-                <span>Subscriptions & Billing</span>
+            <button type="button" @click.prevent="switchTab('subscriptions')" :class="activeTab === 'subscriptions' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-file-signature w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">Subscriptions & Billing</span>
             </button>
 
-            <button type="button" @click="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-brain w-5 text-center text-sm"></i>
-                <span>AI Sales Forecasts</span>
+            <button type="button" @click.prevent="switchTab('reports')" :class="activeTab === 'reports' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-brain w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">AI Sales Forecasts</span>
             </button>
 
-            <button type="button" @click="switchTab('settings')" :class="activeTab === 'settings' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-all text-left cursor-pointer">
-                <i class="fa-solid fa-sliders w-5 text-center text-sm"></i>
-                <span>System Settings</span>
+            <button type="button" @click.prevent="switchTab('settings')" :class="activeTab === 'settings' ? 'bg-gradient-to-r from-accentBlue to-accentCyan text-white shadow-md shadow-accentBlue/20 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs transition-all text-left cursor-pointer select-none min-h-[44px] touch-manipulation w-full" style="touch-action: manipulation;">
+                <i class="fa-solid fa-sliders w-5 text-center text-sm shrink-0"></i>
+                <span class="truncate">System Settings</span>
             </button>
 
             <div class="h-[1px] bg-glassBorder/60 my-2 mx-3"></div>
             
-            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder">
-                <i class="fa-solid fa-globe w-5 text-center text-sm text-accentCyan"></i>
-                <span class="font-medium">POS Storefront</span>
+            <a href="{% url 'store_front' %}" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-all text-left border border-transparent hover:border-glassBorder min-h-[44px] select-none touch-manipulation" style="touch-action: manipulation;">
+                <i class="fa-solid fa-globe w-5 text-center text-sm text-accentCyan shrink-0"></i>
+                <span class="font-medium truncate">POS Storefront</span>
             </a>
             
-            <a href="/admin/" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-purple-200 hover:text-white hover:bg-purple-800/50 transition-all text-left shadow-sm">
-                <i class="fa-solid fa-shield-halved w-5 text-center text-sm text-purple-400"></i>
-                <span class="font-extrabold">Django Admin Panel</span>
+            <a href="/admin/" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-purple-200 hover:text-white hover:bg-purple-800/50 transition-all text-left shadow-sm min-h-[44px] select-none touch-manipulation" style="touch-action: manipulation;">
+                <i class="fa-solid fa-shield-halved w-5 text-center text-sm text-purple-400 shrink-0"></i>
+                <span class="font-extrabold truncate">Django Admin Panel</span>
             </a>
         </div>
     </aside>
@@ -2359,10 +2359,14 @@
             },
             
             switchTab(tabId) {
+                if (tabId === 'cashier') tabId = 'pos';
                 this.activeTab = tabId;
                 if (tabId === 'dashboard') {
-                    this.initChart();
+                    setTimeout(() => this.initChart(), 50);
                 }
+                try {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch(e) {}
             },
             
             filteredInventoryProducts() {
