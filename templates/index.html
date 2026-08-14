@@ -309,8 +309,12 @@
                                 <input type="text" x-model="paymentRef" placeholder="GCash Ref #" class="bg-gray-950 border border-glassBorder rounded px-1.5 py-0.5 text-white max-w-[120px]">
                             </div>
                             <div class="flex justify-between text-xs font-bold pt-1 border-t border-glassBorder/40">
-                                <span class="text-gray-400">Total Paid:</span>
-                                <span :class="paymentPaidTotal() >= posCartTotal() ? 'text-accentGreen' : 'text-red-400'" x-text="'₱' + formatCurrency(paymentPaidTotal())"></span>
+                                <span class="text-gray-400">Cash Tendered (Bayad):</span>
+                                <span class="text-white font-mono" x-text="'₱' + formatCurrency(paymentPaidTotal())"></span>
+                            </div>
+                            <div class="flex justify-between text-xs font-extrabold" x-show="paymentPaidTotal() >= posCartTotal()">
+                                <span class="text-accentGreen">Sukli (Change):</span>
+                                <span class="text-accentGreen font-mono font-black" x-text="'₱' + formatCurrency(Math.max(0, paymentPaidTotal() - posCartTotal()))"></span>
                             </div>
                         </div>
                         
