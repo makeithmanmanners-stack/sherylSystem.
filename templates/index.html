@@ -2004,32 +2004,32 @@
             
             calculateMetrics() {
                 // Today's Sales (Posted invoices created today)
-                let today = new Date().toLocaleDateString('en-CA');
-                let todaySalesTotal = this.sales
-                    .filter(s => s.status === 'Posted' && s.date.slice(0, 10) === today)
-                    .reduce((sum, s) => sum + s.total, 0);
+                let today = new Date().toISOString().slice(0, 10);
+                let todaySalesTotal = (this.sales || [])
+                    .filter(s => s && s.status === 'Posted' && s.date && String(s.date).slice(0, 10) === today)
+                    .reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
                 
                 this.metrics.todaySales = todaySalesTotal;
                 
                 // Inventory Stock Count
-                this.metrics.inventoryCount = this.products.reduce((sum, p) => sum + p.stock_quantity, 0);
+                this.metrics.inventoryCount = (this.products || []).reduce((sum, p) => sum + (parseInt(p.stock_quantity) || 0), 0);
                 
                 // Collections today
-                let cashSales = this.sales
-                    .filter(s => s.status === 'Posted' && s.date.slice(0, 10) === today && s.method !== 'Credit')
-                    .reduce((sum, s) => sum + s.total, 0);
+                let cashSales = (this.sales || [])
+                    .filter(s => s && s.status === 'Posted' && s.date && String(s.date).slice(0, 10) === today && s.method !== 'Credit')
+                    .reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
                 this.metrics.collections = cashSales;
                 
                 // Payables
-                this.metrics.payables = this.suppliers.reduce((sum, s) => sum + parseFloat(s.outstanding_balance), 0);
+                this.metrics.payables = (this.suppliers || []).reduce((sum, s) => sum + (parseFloat(s.outstanding_balance) || 0), 0);
                 
                 // Receivables
-                this.metrics.receivables = this.customers.reduce((sum, c) => sum + parseFloat(c.credit_balance), 0);
+                this.metrics.receivables = (this.customers || []).reduce((sum, c) => sum + (parseFloat(c.credit_balance) || 0), 0);
                 
                 // Route Sales (total sales routed on trips)
-                this.metrics.routeSales = this.sales
-                    .filter(s => s.status === 'Posted' && s.route)
-                    .reduce((sum, s) => sum + s.total, 0);
+                this.metrics.routeSales = (this.sales || [])
+                    .filter(s => s && s.status === 'Posted' && s.route)
+                    .reduce((sum, s) => sum + (parseFloat(s.total) || 0), 0);
             },
             
             initChart() {
@@ -3380,18 +3380,7 @@
                 let base64Text = btoa(unescape(encodeURIComponent(text)));
                 window.location.href = "rawbt:base64," + base64Text;
             },
-                    this.formatReceiptLine(`TRIP NO: ${invNo}`, routeStr, 32) + `\nDATE TIME: ${dateTimeStr}\n================================\n` +
-                    this.formatReceiptLine("OUTLET TRANSACTION", String(itemCount), 32) + `\n================================\n` +
-                    `PRODUCTS                       TOTAL\n--------------------------------\n` +
-                    productLines.join('\n') + `\n--------------------------------\n` +
-                    this.formatReceiptLine("TOTAL:", String(itemCount), 32) + `\n================================\nROUTE TOTALS\n--------------------------------\n` +
-                    this.formatReceiptLine("PRODUCTS:", productsSubtotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n` +
-                    this.formatReceiptLine("SALES:", grandTotal.toLocaleString('en-US', {minimumFractionDigits:2}), 32) + `\n================================\n` +
-                    `CASHIER INFORMATION\nNAME: SHEYDE DEONN VASQUEZ\nSIGN: __________________________\n================================\n`;
 
-                // Clean System Thermal Print Fallback (Zero app launch errors across iOS Safari & Android)
-                window.print();
-            },
             
             // Quick Invoice Sheet
             recalcQuickTotals() {
